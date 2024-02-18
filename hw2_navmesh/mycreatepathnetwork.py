@@ -41,38 +41,51 @@ def checkInsidePoints(poly, worldPoints):
         if lista:
             return False
     return True   
+
 def checkSubsetPoly(worldObstacles,triangle):
 	for obstacle in set(worldObstacles):
 		obstSet = set(obstacle.getPoints())
 		if set(triangle).issubset(obstSet):
 			return False
 	return True
+
 def checkSubsetPolyList(polyList,triangle):
 	if set(triangle).issubset(polyList):
 		return False
 	return True
-def appendTriangleNoDuplicates(triangle, polys):
-    # Check permutations of the triangle to avoid duplicates
-    for permut in permutations(triangle):
-        if polys.count(permut):
-            return  # Triangle already exists in the list, so we don't append it
-    polys.append(triangle)
-    return polys
 
 def printObstacle(obstacles):
 	for obstacle in obstacles:
 		for edge in obstacle.getPoints():
 			print(edge)
 
+
+def is_clockwise(p1, p2, p3):
+    return (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0]) > 0
+   
+# def mergePolys(poly1, poly2):
+
+# check for obstacles
+def hasObstacleBetween(point1, point2, world):
+	for obstacle in world.obstacles:
+			if not (rayTraceWorld(point1, point2, list(obstacle.getLines())) is None):
+				return True
+	return False    
+
+
 # Creates a path node network that connects the midpoints of each nav mesh together
 def myCreatePathNetwork(world, agent = None):
 	nodes = [] 
-	
+	# nodes check points of the blue line
 	edges = []
-	# blue lines   
+	# blue lines that agent travels throught
 	polys = []
 	#  green polygons (triangles)
 
+	### YOUR CODE GOES BELOW HERE ###
+
+	# Any and all of these comments before "YOUR CODE GOES ABOVE HERE" can be deleted. They are meant to help, but may not.
+	
 	# you don't strictly speaking need to use these. But we include in case they help you get started.
 	obstacleLines = world.getLines()[4:] # the first four (i.e. 0-3) are the screen edges; this gets all but those
 	worldLines = list(set(world.getLines()))
@@ -83,26 +96,11 @@ def myCreatePathNetwork(world, agent = None):
 	polySet = set() 
  	# Probably good for holding ManualObstacle instances
 	print(worldLines)
-	for x in worldPoints:
-		for y in filter(lambda i, a=x: a != i, worldPoints):
-			for z in filter(lambda i, a=x, b=y: a != i and i != b, worldPoints):
-				triangle = (x, y, z)
-				if checkSubsetPoly(worldObstacles,triangle):
-					if not hitsObstacles(x, y, lineDict) and not hitsObstacles(x, z, lineDict) and not hitsObstacles(y, z, lineDict) and not hitsObstacles(y, z, worldLines) and not hitsObstacles(x, y, worldLines) and not hitsObstacles(x, z, worldLines):
-						inside_points = filter(lambda i, a=x, b=y, c=z: a != i and i != b and i != c, worldPoints)
-						if checkInsidePoints(triangle, inside_points):
-							polys.append(triangle)
-						appendLineNoDuplicates((x, y), lineDict)
-						appendLineNoDuplicates((x, z), lineDict)
-						appendLineNoDuplicates((y, z), lineDict)
-    # Ensure triangles do not get made inside objects
-	# print(polys)
-	# print('\n dic lines')
-	# print(lineDict)
-	# print('\n world obs')
-	# print(type(worldObstacles))
-	# # print(worldObstacles)
-	# printObstacle(worldObstacles)
+ 
+	# HW TODO: Create triangles that don't intersect with each other or obstacles.
+		# You may need to make sure no obstacles are completely inside the triangle.
+		# You may need to register the triangle's lines for later use (when merging).
+
 	# hint 0: to iterate over a collection, the `range` function is useful. E.g. `for i in range(numPoints):`
 	#
 	# hint 1: We can represent a triangle as a tuple of three worldPoints: triangle = (p1, p2, p3)
@@ -110,27 +108,86 @@ def myCreatePathNetwork(world, agent = None):
 	#
 	# hint 2: It may be useful to use the ManualObstacle class to help manage complexity. E.g. ManualObstacle(triangle)
 	#    Because ManualObstacle is a Obstacle, you have helper methods like draw, getLines, getPoints, and pointInside
-	#
-	# hint 3: for debugging, it can also be useful to 'draw' centroids of hulls, e.g. NavMeshUtils.drawCentroids(world, polySet)
-
-	### YOUR CODE GOES BELOW HERE ###
-
-	# Any and all of these comments before "YOUR CODE GOES ABOVE HERE" can be deleted. They are meant to help, but may not.
 	
-	# HW TODO: Create triangles that don't intersect with each other or obstacles.
-		# You may need to make sure no obstacles are completely inside the triangle.
-		# You may need to register the triangle's lines for later use (when merging).
-
 	# HW TODO: Now merge triangles in a way that preserves convexity.
+	for x in worldPoints:
+		for y in filter(lambda i, a=x: a != i, worldPoints):
+			for z in filter(lambda i, a=x, b=y: a != i and i != b, worldPoints):
+				triangle = (x, y, z)
+				if checkSubsetPoly(worldObstacles, triangle):
+					if not hitsObstacles(x, y, lineDict) and not hitsObstacles(x, z, lineDict) and not hitsObstacles(y, z, lineDict) and not hitsObstacles(y, z, worldLines) and not hitsObstacles(x, y, worldLines) and not hitsObstacles(x, z, worldLines):
+						if is_clockwise(x, y, z):
+							inside_points = filter(lambda i, a=x, b=y, c=z: a != i and i != b and i != c, worldPoints)
+							if checkInsidePoints(triangle, inside_points):
+								polys.append(triangle)
+								polySet.add(ManualObstacle(triangle))
+							appendLineNoDuplicates((x, y), lineDict)
+							appendLineNoDuplicates((x, z), lineDict)
+							appendLineNoDuplicates((y, z), lineDict)
+	
+
+	# hint 3: for debugging, it can also be useful to 'draw' centroids of hulls, e.g. NavMeshUtils.drawCentroids(world, polySet)
 
 	# HW Hint: Now might be a good time to NavMeshUtils.drawCentroids(world, polySet)
 	# NavMeshUtils.drawCentroids(world, polySet)
-
+	NavMeshUtils.drawCentroids(world,polySet)
+	
+	
 	# HW TODO: Create the final nav mesh and create cliques out of the boundaries of each polygon.
 		# Decide how you will use the boundaries and centroid of the polygon as nodes.
 		# For example, if the polygon has more than 3 sides, you may just send a line from each edge to the middle
 		# Note: you can link borders directly in polygons or if the centroid is unusable.
 			# NB: Don't try to link a border to itself!
+
+	agent_radius = agent.getMaxRadius()  # Get the agent's physical size
+	for node1 in polySet:
+		for node2 in polySet:
+			if node1 != node2:
+				center1 = NavMeshUtils.getCentroid(node1.getPoints())
+				center2 = NavMeshUtils.getCentroid(node2.getPoints())
+				offsetcenter1Top = (
+					center1[0],
+					center1[1] + agent_radius
+				)
+				offsetcenter2Top = (
+					center2[0],
+					center2[1] + agent_radius
+				)
+				offsetcenter1Bottom = (
+					center1[0],
+					center1[1] - agent_radius
+				)
+				offsetcenter2Bottom = (
+					center2[0],
+					center2[1] - agent_radius
+				)
+
+				offsetcenter1Right = (
+					center1[0] + agent_radius,
+					center1[1]
+				)
+				offsetcenter2Right = (
+					center2[0] + agent_radius,
+					center2[1]
+				)
+
+				offsetcenter1Left = (
+					center1[0] - agent_radius,
+					center1[1]
+				)
+				offsetcenter2Left = (
+					center2[0] - agent_radius,
+					center2[1]
+				)
+
+				# Check for enough space on all sides 
+				if (not hasObstacleBetween(offsetcenter1Top, offsetcenter2Top, world) and
+					not hasObstacleBetween(offsetcenter1Bottom, offsetcenter2Bottom, world) and
+					not hasObstacleBetween(offsetcenter1Right, offsetcenter2Right, world) and
+					not hasObstacleBetween(offsetcenter1Left, offsetcenter2Left, world)):
+					# lines.append((center1, center2))
+					edges.append((center1, center2))
+
 
 	# We should only return nodes that the agent can reach on the path network.
 	# Suggestion: consider using a BFS of sorts to get a connected graph.
