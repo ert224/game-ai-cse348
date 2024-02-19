@@ -102,7 +102,6 @@ def myCreatePathNetwork(world, agent = None):
 	lineDict = []
 	polySet = set() 
  	# Probably good for holding ManualObstacle instances
-	print(worldLines)
  
 	# HW TODO: Create triangles that don't intersect with each other or obstacles.
 		# You may need to make sure no obstacles are completely inside the triangle.
@@ -145,7 +144,6 @@ def myCreatePathNetwork(world, agent = None):
 
 	NavMeshUtils.drawCentroids(world,polySet)
 	for i in polySet:
-		print(i.getPoints())
 		polys.append(i.getPoints())
 	
 	# polys = list(polysMerge)
@@ -157,7 +155,10 @@ def myCreatePathNetwork(world, agent = None):
 
 	agent_radius = agent.getMaxRadius()  # Get the agent's physical size
 	for node1 in polySet:
+		count = 0
 		for node2 in polySet:
+			if count == 5:
+				break
 			if node1 != node2:
 				center1 = NavMeshUtils.getCentroid(node1.getPoints())
 				center2 = NavMeshUtils.getCentroid(node2.getPoints())
@@ -207,6 +208,7 @@ def myCreatePathNetwork(world, agent = None):
 					not hasObstacleBetween(offsetcenter1Left, offsetcenter2Left, world)):
 					# lines.append((center1, center2))
 					edges.append((center1, center2))
+					count+=1
 
 
 	# We should only return nodes that the agent can reach on the path network.
