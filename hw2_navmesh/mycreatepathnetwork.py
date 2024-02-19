@@ -29,11 +29,6 @@ from utils_navmesh import NavMeshUtils
     
 
 
-def hitsObstacles(p1, p2, lines):
-    hit = rayTraceWorldNoEndPoints(p1, p2, lines)
-    if hit == p1 or hit == p2:
-        return False
-    return hit
 
 def checkInsidePoints(poly, worldPoints):
     for point in worldPoints:
@@ -41,13 +36,6 @@ def checkInsidePoints(poly, worldPoints):
         if lista:
             return False
     return True   
-
-def checkSubsetPoly(worldObstacles,triangle):
-	for obstacle in set(worldObstacles):
-		obstSet = set(obstacle.getPoints())
-		if set(triangle).issubset(obstSet):
-			return False
-	return True
 
 def checkSubsetPolyList(polyList,triangle):
 	if set(triangle).issubset(polyList):
@@ -63,15 +51,34 @@ def printObstacle(obstacles):
 def is_clockwise(p1, p2, p3):
     return (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0]) > 0
    
-# def mergePolys(poly1, poly2):
+
+ 
+def checkSubsetPoly(worldObstacles,triangle):
+	for obstacle in set(worldObstacles):
+		obstSet = set(obstacle.getPoints())
+		if set(triangle).issubset(obstSet):
+			return False
+	return True
 
 # check for obstacles
 def hasObstacleBetween(point1, point2, world):
 	for obstacle in world.obstacles:
 			if not (rayTraceWorld(point1, point2, list(obstacle.getLines())) is None):
 				return True
-	return False    
+	return False  
 
+def hasObstacleLines(point1, point2, world):
+	for obstacle in world.obstacles:
+			if not (rayTraceWorld(point1, point2, list(obstacle.getLines())) is None):
+				return True
+	return False  
+ 
+def hitsObstacles(p1, p2, lines):
+    hit = rayTraceWorldNoEndPoints(p1, p2, lines)
+    if hit == p1 or hit == p2:
+        return False
+    return hit
+            
 
 # Creates a path node network that connects the midpoints of each nav mesh together
 def myCreatePathNetwork(world, agent = None):
@@ -119,7 +126,7 @@ def myCreatePathNetwork(world, agent = None):
 						if is_clockwise(x, y, z):
 							inside_points = filter(lambda i, a=x, b=y, c=z: a != i and i != b and i != c, worldPoints)
 							if checkInsidePoints(triangle, inside_points):
-								polys.append(triangle)
+								# polys.append(triangle)
 								polySet.add(ManualObstacle(triangle))
 							appendLineNoDuplicates((x, y), lineDict)
 							appendLineNoDuplicates((x, z), lineDict)
@@ -130,9 +137,18 @@ def myCreatePathNetwork(world, agent = None):
 
 	# HW Hint: Now might be a good time to NavMeshUtils.drawCentroids(world, polySet)
 	# NavMeshUtils.drawCentroids(world, polySet)
+	# polyLines = []
+	# polysMerge = set()
+	# for node1 in polySet:
+	# 	for node2 in polySet:
+	# 		mergePolys(node1, node2, polysMerge, worldLines, polyLines,worldObstacles)  # Pass w
+
 	NavMeshUtils.drawCentroids(world,polySet)
+	for i in polySet:
+		print(i.getPoints())
+		polys.append(i.getPoints())
 	
-	
+	# polys = list(polysMerge)
 	# HW TODO: Create the final nav mesh and create cliques out of the boundaries of each polygon.
 		# Decide how you will use the boundaries and centroid of the polygon as nodes.
 		# For example, if the polygon has more than 3 sides, you may just send a line from each edge to the middle
@@ -145,6 +161,10 @@ def myCreatePathNetwork(world, agent = None):
 			if node1 != node2:
 				center1 = NavMeshUtils.getCentroid(node1.getPoints())
 				center2 = NavMeshUtils.getCentroid(node2.getPoints())
+				nodes.append(center1)
+				nodes.append(center2)
+				if rayTraceWorldNoEndPoints(center1, center2, edges):
+					continue
 				offsetcenter1Top = (
 					center1[0],
 					center1[1] + agent_radius
