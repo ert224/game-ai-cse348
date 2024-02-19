@@ -78,7 +78,17 @@ def hitsObstacles(p1, p2, lines):
     if hit == p1 or hit == p2:
         return False
     return hit
-            
+
+def mergePolys(polySet):
+    # merge triangles that share a line
+    merged = set()
+    for poly in polySet:
+        for otherPoly in filter(lambda x: x != poly, polySet):
+            if polygonsAdjacent(poly.getPoints(), otherPoly.getPoints()):
+                manualObstacle = ManualObstacle(poly.getPoints() + otherPoly.getPoints())
+                if isConvex(manualObstacle.getPoints()):
+                    merged.add(manualObstacle.getPoints())
+    return merged
 
 # Creates a path node network that connects the midpoints of each nav mesh together
 def myCreatePathNetwork(world, agent = None):
@@ -116,6 +126,9 @@ def myCreatePathNetwork(world, agent = None):
 	#    Because ManualObstacle is a Obstacle, you have helper methods like draw, getLines, getPoints, and pointInside
 	
 	# HW TODO: Now merge triangles in a way that preserves convexity.
+	reference_point = (0, 0)  # You can choose any reference point here
+	worldPoints = sorted(world.getPoints(), key=lambda p: distance(reference_point, p))
+
 	for x in worldPoints:
 		for y in filter(lambda i, a=x: a != i, worldPoints):
 			for z in filter(lambda i, a=x, b=y: a != i and i != b, worldPoints):
@@ -125,7 +138,6 @@ def myCreatePathNetwork(world, agent = None):
 						if is_clockwise(x, y, z):
 							inside_points = filter(lambda i, a=x, b=y, c=z: a != i and i != b and i != c, worldPoints)
 							if checkInsidePoints(triangle, inside_points):
-								# polys.append(triangle)
 								polySet.add(ManualObstacle(triangle))
 							appendLineNoDuplicates((x, y), lineDict)
 							appendLineNoDuplicates((x, z), lineDict)
@@ -155,10 +167,7 @@ def myCreatePathNetwork(world, agent = None):
 
 	agent_radius = agent.getMaxRadius()  # Get the agent's physical size
 	for node1 in polySet:
-		count = 0
 		for node2 in polySet:
-			if count == 5:
-				break
 			if node1 != node2:
 				center1 = NavMeshUtils.getCentroid(node1.getPoints())
 				center2 = NavMeshUtils.getCentroid(node2.getPoints())
@@ -208,7 +217,6 @@ def myCreatePathNetwork(world, agent = None):
 					not hasObstacleBetween(offsetcenter1Left, offsetcenter2Left, world)):
 					# lines.append((center1, center2))
 					edges.append((center1, center2))
-					count+=1
 
 
 	# We should only return nodes that the agent can reach on the path network.
