@@ -99,15 +99,21 @@ def mergePolys(polySet):
                     if checkSubsetPoly(polySet, holdPoints):
                         manualObstacle = ManualObstacle(holdPoints)
                         merged.add(manualObstacle)
-    # holdMerge = set()                   
-    # for poly in merged:
-    #     for poly2 in merged:
-    #         if poly2 == poly:
-    #             continue
-    #         for p in poly.getPoints:
-    #             hitsObstacles(poly2,poly2.getLins)
+    holdMerge = set() 
+    counter = 0                  
+    for poly in merged:
+        # print("\n",poly.getPoints())
+        for poly2 in merged:
+            if poly2 == poly:
+                # print('same\t', poly2.getPoints())
+                continue
+            # print()
+            for p in range(1,len(poly2.getPoints())):
+                # print(poly.getPoints()[p-1],poly.getPoints()[p])
+                if not hitsObstacles(poly.getPoints()[p-1],poly.getPoints()[p],poly2.getLines()):
+                    holdMerge.add(poly)
        
-    return merged
+    return holdMerge
 
 
 # Creates a path node network that connects the midpoints of each nav mesh together
@@ -227,11 +233,11 @@ def myCreatePathNetwork(world, agent = None):
 							count += 1
 							line = (centroid1, centroid2)
 							# Check if three of the same centroid already exist in allLinePoints
-							if  allLinePoints.count(centroid2) < 3:
-								allLinePoints.append(centroid1)
-								allLinePoints.append(centroid2)
-								edges.append(line)
-								break
+							# if  allLinePoints.count(centroid2) < 2:
+								# allLinePoints.append(centroid1)
+								# allLinePoints.append(centroid2)
+							edges.append(line)
+							break
 
 
 
