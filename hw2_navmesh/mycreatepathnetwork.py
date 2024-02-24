@@ -214,51 +214,37 @@ def myCreatePathNetwork(world, agent = None):
 		# For example, if the polygon has more than 3 sides, you may just send a line from each edge to the middle
 		# Note: you can link borders directly in polygons or if the centroid is unusable.
 			# NB: Don't try to link a border to itself!
-
-	# for polygon in mergeShapes: 
-	# 	for line in polygon.getLines():
-	# 		nodes.append(NavMeshUtils.getMidpointLine(line))
+	nodesSet = set()
+	for polygon in mergeShapes: 
+		for line in polygon.getLines():
+			nodesSet.add(NavMeshUtils.getMidpointLine(line))
 	
-	# for polygon in mergeShapes: 
-	# 	centroid1 = NavMeshUtils.getCentroid(polygon.getPoints())
-		# nodes.append(centroid1)
-	
+	for polygon in mergeShapes: 
+		centroid1 = NavMeshUtils.getCentroid(polygon.getPoints())
+		nodesSet.add(centroid1)
+	nodes = list(nodesSet)
+ 
 	allLinePoints = []
+ 
 	agent_radius = agent.getMaxRadius()  # Get the agent's physical size
-	# for centroid1 in nodes:
-	# 	count = 0
-	# 	# disNodes.sort(key=lambda p: is_clockwise(centroid1, (centroid1[0] + 1, centroid1[1]), p))
-	# 	disNodes = sorted(nodes, key=lambda p: distance(centroid1, p))
-
-	# 	# sorted(nodes, key=lambda p: -distance(centroid1, p))
-	# 	for centroid2 in disNodes:
-	# 		if centroid1 != centroid2:
-	# 			# Calculate the distance between centroids
-	# 			# Check if the distance between centroids is greater than the agent's radius
-	# 			# Check if the line intersects with obstacles
-	# 			if not rayTraceWorldNoEndPoints(centroid1, centroid2, edges):
-	# 				# Check for enough space on all sides 
-	# 				offsetcenter1Top = (centroid1[0], centroid1[1] + agent_radius)
-	# 				offsetcenter2Top = (centroid2[0], centroid2[1] + agent_radius)
-	# 				offsetcenter1Bottom = (centroid1[0], centroid1[1] - agent_radius)
-	# 				offsetcenter2Bottom = (centroid2[0], centroid2[1] - agent_radius)
-	# 				offsetcenter1Right = (centroid1[0] + agent_radius, centroid1[1])
-	# 				offsetcenter2Right = (centroid2[0] + agent_radius, centroid2[1])
-	# 				offsetcenter1Left = (centroid1[0] - agent_radius, centroid1[1])
-	# 				offsetcenter2Left = (centroid2[0] - agent_radius, centroid2[1])
-
-	# 				if (not hasObstacleBetween(offsetcenter1Top, offsetcenter2Top, world) and
-	# 					not hasObstacleBetween(offsetcenter1Bottom, offsetcenter2Bottom, world) and
-	# 					not hasObstacleBetween(offsetcenter1Right, offsetcenter2Right, world) and
-	# 					not hasObstacleBetween(offsetcenter1Left, offsetcenter2Left, world)):
-	# 					count += 1
-	# 					line = (centroid1, centroid2)
-	# 					# Check if three of the same centroid already exist in allLinePoints
-	# 					if  allLinePoints.count(centroid1) < 2 and allLinePoints.count(centroid2) < 2:
-	# 						allLinePoints.append(centroid1)
-	# 						allLinePoints.append(centroid2)
-	# 						# edges.append(line)
-	# 					# break
+	for centroid1 in nodes:
+		inside_points = filter(lambda p: p != centroid1, nodes)
+		disNodes = sorted(inside_points, key=lambda p: distance(centroid1, p))
+		for centroid2 in disNodes:
+			offsetcenter1Top = (centroid1[0], centroid1[1] + agent_radius)
+			offsetcenter2Top = (centroid2[0], centroid2[1] + agent_radius)
+			offsetcenter1Bottom = (centroid1[0], centroid1[1] - agent_radius)
+			offsetcenter2Bottom = (centroid2[0], centroid2[1] - agent_radius)
+			offsetcenter1Right = (centroid1[0] + agent_radius, centroid1[1])
+			offsetcenter2Right = (centroid2[0] + agent_radius, centroid2[1])
+			offsetcenter1Left = (centroid1[0] - agent_radius, centroid1[1])
+			offsetcenter2Left = (centroid2[0] - agent_radius, centroid2[1])
+			if (not hasObstacleBetween(offsetcenter1Top, offsetcenter2Top, world) and
+				not hasObstacleBetween(offsetcenter1Bottom, offsetcenter2Bottom, world) and
+				not hasObstacleBetween(offsetcenter1Right, offsetcenter2Right, world) and
+				not hasObstacleBetween(offsetcenter1Left, offsetcenter2Left, world)):
+				line = (centroid1, centroid2)
+				edges.append(line)
 
 
 
