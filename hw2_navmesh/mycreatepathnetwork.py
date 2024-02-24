@@ -88,10 +88,37 @@ def sortCounterClockwise(points):
     sorted_points = sorted(points, key=lambda point: getAngle(center, point))
     return sorted_points
 
-def mergePolys(polySet):
+# def mergePolys(polySet):
     
+#     merged = set()
+#     for poly in set(polySet):
+#         for poly2 in filter(lambda x: x != poly, polySet):
+#             if polygonsAdjacent(poly.getPoints(), poly2.getPoints()):
+#                 holdPoints = sortCounterClockwise(set(poly.getPoints() + poly2.getPoints()))
+#                 if isConvex(holdPoints):
+#                     if checkSubsetPoly(polySet, holdPoints):
+#                         manualObstacle = ManualObstacle(holdPoints)
+#                         merged.add(manualObstacle)
+#     holdMerge = set() 
+#     counter = 0                  
+#     for poly in merged:
+#         # print("\n",poly.getPoints())
+#         for poly2 in merged:
+#             if poly2 == poly:
+#                 # print('same\t', poly2.getPoints())
+#                 continue
+#             # print()
+#             for p in range(1,len(poly2.getPoints())):
+#                 # print(poly.getPoints()[p-1],poly.getPoints()[p])
+#                 if not hitsObstacles(poly.getPoints()[p-1],poly.getPoints()[p],poly2.getLines()):
+#                     holdMerge.add(poly)
+       
+#     return holdMerge
+
+def mergePolys(polySet):
+    # merge triangles that share a line
     merged = set()
-    for poly in set(polySet):
+    for poly in polySet:
         for poly2 in filter(lambda x: x != poly, polySet):
             if polygonsAdjacent(poly.getPoints(), poly2.getPoints()):
                 holdPoints = sortCounterClockwise(set(poly.getPoints() + poly2.getPoints()))
@@ -99,21 +126,7 @@ def mergePolys(polySet):
                     if checkSubsetPoly(polySet, holdPoints):
                         manualObstacle = ManualObstacle(holdPoints)
                         merged.add(manualObstacle)
-    holdMerge = set() 
-    counter = 0                  
-    for poly in merged:
-        # print("\n",poly.getPoints())
-        for poly2 in merged:
-            if poly2 == poly:
-                # print('same\t', poly2.getPoints())
-                continue
-            # print()
-            for p in range(1,len(poly2.getPoints())):
-                # print(poly.getPoints()[p-1],poly.getPoints()[p])
-                if not hitsObstacles(poly.getPoints()[p-1],poly.getPoints()[p],poly2.getLines()):
-                    holdMerge.add(poly)
-       
-    return holdMerge
+    return merged
 
 
 # Creates a path node network that connects the midpoints of each nav mesh together
@@ -182,7 +195,7 @@ def myCreatePathNetwork(world, agent = None):
 			x = tri[0]
 			y = tri[1]
 			z = tri[2]
-			print(x,y,z)
+			# print(x,y,z)
 			if checkSubsetPoly(worldObstacles, tri):
 				inside_points = filter(lambda i, a=x, b=y, c=z: a != i and i != b and i != c, worldPoints)
 				if isInsideObstacle(tri, inside_points):
@@ -207,22 +220,26 @@ def myCreatePathNetwork(world, agent = None):
 			# NB: Don't try to link a border to itself!
 
 	for polygon in mergPol: 
-		centroid1 = NavMeshUtils.getCentroid(polygon.getPoints())
-		nodes.append(centroid1)
+		for line in polygon.getLines():
+			nodes.append(NavMeshUtils.getMidpointLine(line))
+	
+	# for polygon in mergPol: 
+	# 	centroid1 = NavMeshUtils.getCentroid(polygon.getPoints())
+	# 	nodes.append(centroid1)
 	
 	allLinePoints = []
 	agent_radius = agent.getMaxRadius()  # Get the agent's physical size
 	for centroid1 in nodes:
 		count = 0
-		disNodes = sorted(nodes, key=lambda p: -distance(centroid1, p))
+		# disNodes = sorted(nodes, key=lambda p: distance(centroid1, p))
 		# disNodes.sort(key=lambda p: is_clockwise(centroid1, (centroid1[0] + 1, centroid1[1]), p))
-# sorted(nodes, key=lambda p: -distance(centroid1, p))
-		for centroid2 in disNodes:
+		# sorted(nodes, key=lambda p: -distance(centroid1, p))
+		for centroid2 in nodes:
 			if centroid1 != centroid2:
 				# Calculate the distance between centroids
 				# Check if the distance between centroids is greater than the agent's radius
 				# Check if the line intersects with obstacles
-				# if not rayTraceWorldNoEndPoints(centroid1, centroid2, edges):
+				if not rayTraceWorldNoEndPoints(centroid1, centroid2, edges):
 					# Check for enough space on all sides 
 					offsetcenter1Top = (centroid1[0], centroid1[1] + agent_radius)
 					offsetcenter2Top = (centroid2[0], centroid2[1] + agent_radius)
@@ -240,11 +257,11 @@ def myCreatePathNetwork(world, agent = None):
 						count += 1
 						line = (centroid1, centroid2)
 						# Check if three of the same centroid already exist in allLinePoints
-						# if  allLinePoints.count(centroid2) < 2:
-							# allLinePoints.append(centroid1)
-							# allLinePoints.append(centroid2)
-						edges.append(line)
-						break
+						if  allLinePoints.count(centroid2) < 2:
+							allLinePoints.append(centroid1)
+							allLinePoints.append(centroid2)
+							edges.append(line)
+						# break
 
 
 
