@@ -78,6 +78,9 @@ def hitsObstacles(p1, p2, lines):
     if hit == p1 or hit == p2:
         return False
     return hit
+def triangleHitsObs(x,y,z,lines):
+	return not hitsObstacles(y, z, lines) and not hitsObstacles(x, y, lines) and not hitsObstacles(x, z, lines)
+    
 
 def getAngle(p1, p2):
     return math.atan2(p2[1] - p1[1], p2[0] - p1[0])
@@ -118,12 +121,12 @@ def sortCounterClockwise(points):
 def mergePolys(polySet):
     # merge triangles that share a line
     merged = set()
-    for poly in polySet:
-        for poly2 in filter(lambda x: x != poly, polySet):
-            if polygonsAdjacent(poly.getPoints(), poly2.getPoints()):
-                holdPoints = sortCounterClockwise(set(poly.getPoints() + poly2.getPoints()))
+    for triangle1 in polySet:
+        for triangle2 in filter(lambda x: x != triangle1, polySet):
+            if polygonsAdjacent(triangle1.getPoints(), triangle2.getPoints()):
+                holdPoints = sortCounterClockwise(set(triangle1.getPoints() + triangle2.getPoints()))
                 if isConvex(holdPoints):
-                    if checkSubsetPoly(polySet, holdPoints):
+                    if checkSubsetPoly(merged, holdPoints):
                         manualObstacle = ManualObstacle(holdPoints)
                         merged.add(manualObstacle)
     return merged
@@ -174,41 +177,34 @@ def myCreatePathNetwork(world, agent = None):
 			for z in closest_points:
 				if y != z:
 					triangle = (x, y, z)
-    #  					if checkSubsetPoly(worldObstacles, triangle):
-					if (not hitsObstacles(x, y, lineDict) and
-						not hitsObstacles(x, z, lineDict) and
-						not hitsObstacles(y, z, lineDict) and
-						not hitsObstacles(y, z, worldLines) and
-						not hitsObstacles(x, y, worldLines) and
-						not hitsObstacles(x, z, worldLines)):
+					if (triangleHitsObs(x,y,z,worldLines)):
 						if is_clockwise(x, y, z):
-							# inside_points = filter(lambda i, a=x, b=y, c=z: a != i and i != b and i != c, worldPoints)
-							# if isInsideObstacle(triangle, inside_points):
-							# polySet.add(ManualObstacle(triangle))
 							shapes.add(triangle)
-							appendLineNoDuplicates((x, y), lineDict)
-							appendLineNoDuplicates((x, z), lineDict)
-							appendLineNoDuplicates((y, z), lineDict)
+							appendLineNoDuplicates((x, y), worldLines)
+							appendLineNoDuplicates((x, z), worldLines)
+							appendLineNoDuplicates((y, z), worldLines)
 	
 	# hint 3: for debugging, it can also be useful to 'draw' centroids of hulls, e.g. NavMeshUtils.drawCentroids(world, polySet)
 	for tri in shapes:
 			x = tri[0]
 			y = tri[1]
 			z = tri[2]
-			# print(x,y,z)
 			if checkSubsetPoly(worldObstacles, tri):
 				inside_points = filter(lambda i, a=x, b=y, c=z: a != i and i != b and i != c, worldPoints)
 				if isInsideObstacle(tri, inside_points):
+					# nodes.append(NavMeshUtils.getMidpointLine((x, y)))
+					# nodes.append(NavMeshUtils.getMidpointLine((x, z)))
+					# nodes.append(NavMeshUtils.getMidpointLine((y, z)))
 					polySet.add(ManualObstacle(tri))
 
 	# HW TODO: Now merge triangles in a way that preserves convexity.
 
 	# HW Hint: Now might be a good time to NavMeshUtils.drawCentroids(world, polySet)
 
-	mergPol = mergePolys(polySet)
-	NavMeshUtils.drawCentroids(world,mergPol)
+	mergeShapes = mergePolys(polySet)
+	NavMeshUtils.drawCentroids(world,mergeShapes)
  
-	for i in mergPol:
+	for i in mergeShapes:
 		polys.append(i.getPoints())
 	
  
@@ -219,49 +215,50 @@ def myCreatePathNetwork(world, agent = None):
 		# Note: you can link borders directly in polygons or if the centroid is unusable.
 			# NB: Don't try to link a border to itself!
 
-	for polygon in mergPol: 
-		for line in polygon.getLines():
-			nodes.append(NavMeshUtils.getMidpointLine(line))
+	# for polygon in mergeShapes: 
+	# 	for line in polygon.getLines():
+	# 		nodes.append(NavMeshUtils.getMidpointLine(line))
 	
-	# for polygon in mergPol: 
+	# for polygon in mergeShapes: 
 	# 	centroid1 = NavMeshUtils.getCentroid(polygon.getPoints())
-	# 	nodes.append(centroid1)
+		# nodes.append(centroid1)
 	
 	allLinePoints = []
 	agent_radius = agent.getMaxRadius()  # Get the agent's physical size
-	for centroid1 in nodes:
-		count = 0
-		# disNodes = sorted(nodes, key=lambda p: distance(centroid1, p))
-		# disNodes.sort(key=lambda p: is_clockwise(centroid1, (centroid1[0] + 1, centroid1[1]), p))
-		# sorted(nodes, key=lambda p: -distance(centroid1, p))
-		for centroid2 in nodes:
-			if centroid1 != centroid2:
-				# Calculate the distance between centroids
-				# Check if the distance between centroids is greater than the agent's radius
-				# Check if the line intersects with obstacles
-				if not rayTraceWorldNoEndPoints(centroid1, centroid2, edges):
-					# Check for enough space on all sides 
-					offsetcenter1Top = (centroid1[0], centroid1[1] + agent_radius)
-					offsetcenter2Top = (centroid2[0], centroid2[1] + agent_radius)
-					offsetcenter1Bottom = (centroid1[0], centroid1[1] - agent_radius)
-					offsetcenter2Bottom = (centroid2[0], centroid2[1] - agent_radius)
-					offsetcenter1Right = (centroid1[0] + agent_radius, centroid1[1])
-					offsetcenter2Right = (centroid2[0] + agent_radius, centroid2[1])
-					offsetcenter1Left = (centroid1[0] - agent_radius, centroid1[1])
-					offsetcenter2Left = (centroid2[0] - agent_radius, centroid2[1])
+	# for centroid1 in nodes:
+	# 	count = 0
+	# 	# disNodes.sort(key=lambda p: is_clockwise(centroid1, (centroid1[0] + 1, centroid1[1]), p))
+	# 	disNodes = sorted(nodes, key=lambda p: distance(centroid1, p))
 
-					if (not hasObstacleBetween(offsetcenter1Top, offsetcenter2Top, world) and
-						not hasObstacleBetween(offsetcenter1Bottom, offsetcenter2Bottom, world) and
-						not hasObstacleBetween(offsetcenter1Right, offsetcenter2Right, world) and
-						not hasObstacleBetween(offsetcenter1Left, offsetcenter2Left, world)):
-						count += 1
-						line = (centroid1, centroid2)
-						# Check if three of the same centroid already exist in allLinePoints
-						if  allLinePoints.count(centroid2) < 2:
-							allLinePoints.append(centroid1)
-							allLinePoints.append(centroid2)
-							edges.append(line)
-						# break
+	# 	# sorted(nodes, key=lambda p: -distance(centroid1, p))
+	# 	for centroid2 in disNodes:
+	# 		if centroid1 != centroid2:
+	# 			# Calculate the distance between centroids
+	# 			# Check if the distance between centroids is greater than the agent's radius
+	# 			# Check if the line intersects with obstacles
+	# 			if not rayTraceWorldNoEndPoints(centroid1, centroid2, edges):
+	# 				# Check for enough space on all sides 
+	# 				offsetcenter1Top = (centroid1[0], centroid1[1] + agent_radius)
+	# 				offsetcenter2Top = (centroid2[0], centroid2[1] + agent_radius)
+	# 				offsetcenter1Bottom = (centroid1[0], centroid1[1] - agent_radius)
+	# 				offsetcenter2Bottom = (centroid2[0], centroid2[1] - agent_radius)
+	# 				offsetcenter1Right = (centroid1[0] + agent_radius, centroid1[1])
+	# 				offsetcenter2Right = (centroid2[0] + agent_radius, centroid2[1])
+	# 				offsetcenter1Left = (centroid1[0] - agent_radius, centroid1[1])
+	# 				offsetcenter2Left = (centroid2[0] - agent_radius, centroid2[1])
+
+	# 				if (not hasObstacleBetween(offsetcenter1Top, offsetcenter2Top, world) and
+	# 					not hasObstacleBetween(offsetcenter1Bottom, offsetcenter2Bottom, world) and
+	# 					not hasObstacleBetween(offsetcenter1Right, offsetcenter2Right, world) and
+	# 					not hasObstacleBetween(offsetcenter1Left, offsetcenter2Left, world)):
+	# 					count += 1
+	# 					line = (centroid1, centroid2)
+	# 					# Check if three of the same centroid already exist in allLinePoints
+	# 					if  allLinePoints.count(centroid1) < 2 and allLinePoints.count(centroid2) < 2:
+	# 						allLinePoints.append(centroid1)
+	# 						allLinePoints.append(centroid2)
+	# 						# edges.append(line)
+	# 					# break
 
 
 
