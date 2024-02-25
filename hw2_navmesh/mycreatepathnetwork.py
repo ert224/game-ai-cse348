@@ -147,12 +147,12 @@ def create_lines(points, worldObstacles, agent_radius):
     savedPoint = points[0]
     visited.add(savedPoint)
     exitCounter = len(points)
+    previous_points = []  # To keep track of previous points
+    
     while exitCounter:
+        closestPoints = sorted(points, key=lambda p: distance(savedPoint, p))
         closest_point = None
-        disNodes = sorted(points, key=lambda p: distance(savedPoint, p))
-        closest_point = disNodes[0]
-        counter = 0
-        for currPoint in disNodes:
+        for currPoint in closestPoints:
             if currPoint not in visited:
                 if not clashesWithObstacle(savedPoint, currPoint, worldObstacles):
                     offsetcenter1Top = (savedPoint[0], savedPoint[1] + agent_radius)
@@ -173,12 +173,17 @@ def create_lines(points, worldObstacles, agent_radius):
         if closest_point:
             lines.append((savedPoint, closest_point))
             visited.add(closest_point)
+            previous_points.append(savedPoint)  # Save the previous point
             savedPoint = closest_point
-            
+        else:
+            if previous_points:  # If there are previous points to backtrack to
+                savedPoint = previous_points.pop()  # Backtrack
+            else:
+                break  # No more points to backtrack, exit
+        
         exitCounter -= 1
     
     return lines
-
 
 # Creates a path node network that connects the midpoints of each nav mesh together
 def myCreatePathNetwork(world, agent = None):
@@ -300,7 +305,7 @@ def myCreatePathNetwork(world, agent = None):
 	# midList = sorted(nodes, key=lambda p: distance(reference_point, p))
 
 	# edges3 = create_lines(midList,worldObstacles,agent_radius)
-	edges = list(set(edges1))
+	edges = list(edges1)
 
 
 
