@@ -124,17 +124,21 @@ def sortCounterClockwise(points):
 #     return holdMerge
 
 def mergePolys(polySet):
-    # merge triangles that share a line
     merged = set()
     for triangle1 in polySet:
         for triangle2 in filter(lambda x: x != triangle1, polySet):
-            if polygonsAdjacent(triangle1.getPoints(), triangle2.getPoints()):
-                holdPoints = sortCounterClockwise(set(triangle1.getPoints() + triangle2.getPoints()))
-                if isConvex(holdPoints):
-                    if checkSubsetPoly(merged, holdPoints):
+            for triangle3 in filter(lambda x: x != triangle2 and x != triangle1, polySet):
+                # Check if the triangles share two edges
+                if (polygonsAdjacent(triangle1.getPoints(), triangle2.getPoints()) and 
+                    polygonsAdjacent(triangle1.getPoints(), triangle3.getPoints())):
+                    # Merge the points and create a new ManualObstacle if the resulting polygon is convex and not already in merged
+                    holdPoints = sortCounterClockwise(set(triangle1.getPoints() + triangle2.getPoints()+ triangle3.getPoints()))
+                    if isConvex(holdPoints) and checkSubsetPoly(merged, holdPoints):
+                        print(holdPoints)
                         manualObstacle = ManualObstacle(holdPoints)
                         merged.add(manualObstacle)
     return merged
+
 
 def calculate_distance(point1, point2):
     x1, y1 = point1
@@ -281,7 +285,7 @@ def myCreatePathNetwork(world, agent = None):
  
 	agent_radius = agent.getMaxRadius()  # Get the agent's physical size
 	disNodes = sorted(nodes, key=lambda p: distance((0,0), p))
-	print(disNodes)
+	# print(disNodes)
 	# for centroid1 in nodes:
 	# 	inside_points = filter(lambda p: p != centroid1, nodes)
 	# 	for centroid2 in nodes:
