@@ -64,8 +64,13 @@ def checkSubsetPoly(worldObstacles,triangle):
 def hasObstacleBetween(point1, point2, world):
 	for obstacle in world.obstacles:
 			if not (rayTraceWorld(point1, point2, list(obstacle.getLines())) is None):
-				return True
-	return False  
+				return True # yes there is an obstacle 
+	return False  # no there is no obstacle between the two points 
+def clashesWithObstacle(point1, point2, obstacles):
+	for obstacle in obstacles:
+			if not (rayTraceWorld(point1, point2, list(obstacle.getLines())) is None):
+				return True # yes there is an obstacle 
+	return False  # no there is no obstacle between the two points 
 
 def hasObstacleLines(point1, point2, world):
 	for obstacle in world.obstacles:
@@ -130,6 +135,49 @@ def mergePolys(polySet):
                         manualObstacle = ManualObstacle(holdPoints)
                         merged.add(manualObstacle)
     return merged
+
+def calculate_distance(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+    return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+
+def create_lines(points, worldObstacles, agent_radius):
+    lines = []
+    visited = set()
+    savedPoint = points[0]
+    visited.add(savedPoint)
+    exitCounter = len(points)
+    while exitCounter:
+        closest_point = None
+        disNodes = sorted(points, key=lambda p: distance(savedPoint, p))
+        closest_point = disNodes[0]
+        counter = 0
+        for currPoint in disNodes:
+            if currPoint not in visited:
+                if not clashesWithObstacle(savedPoint, currPoint, worldObstacles):
+                    offsetcenter1Top = (savedPoint[0], savedPoint[1] + agent_radius)
+                    offsetcenter2Top = (currPoint[0], currPoint[1] + agent_radius)
+                    offsetcenter1Bottom = (savedPoint[0], savedPoint[1] - agent_radius)
+                    offsetcenter2Bottom = (currPoint[0], currPoint[1] - agent_radius)
+                    offsetcenter1Right = (savedPoint[0] + agent_radius, savedPoint[1])
+                    offsetcenter2Right = (currPoint[0] + agent_radius, currPoint[1])
+                    offsetcenter1Left = (savedPoint[0] - agent_radius, savedPoint[1])
+                    offsetcenter2Left = (currPoint[0] - agent_radius, currPoint[1])
+                    if (not clashesWithObstacle(offsetcenter1Top, offsetcenter2Top, worldObstacles) and
+                        not clashesWithObstacle(offsetcenter1Bottom, offsetcenter2Bottom, worldObstacles) and
+                        not clashesWithObstacle(offsetcenter1Right, offsetcenter2Right, worldObstacles) and
+                        not clashesWithObstacle(offsetcenter1Left, offsetcenter2Left, worldObstacles)):
+                        closest_point = currPoint
+                        break
+        
+        if closest_point:
+            lines.append((savedPoint, closest_point))
+            visited.add(closest_point)
+            savedPoint = closest_point
+            
+        exitCounter -= 1
+    
+    return lines
 
 
 # Creates a path node network that connects the midpoints of each nav mesh together
@@ -227,24 +275,33 @@ def myCreatePathNetwork(world, agent = None):
 	allLinePoints = []
  
 	agent_radius = agent.getMaxRadius()  # Get the agent's physical size
-	for centroid1 in nodes:
-		inside_points = filter(lambda p: p != centroid1, nodes)
-		disNodes = sorted(inside_points, key=lambda p: distance(centroid1, p))
-		for centroid2 in disNodes:
-			offsetcenter1Top = (centroid1[0], centroid1[1] + agent_radius)
-			offsetcenter2Top = (centroid2[0], centroid2[1] + agent_radius)
-			offsetcenter1Bottom = (centroid1[0], centroid1[1] - agent_radius)
-			offsetcenter2Bottom = (centroid2[0], centroid2[1] - agent_radius)
-			offsetcenter1Right = (centroid1[0] + agent_radius, centroid1[1])
-			offsetcenter2Right = (centroid2[0] + agent_radius, centroid2[1])
-			offsetcenter1Left = (centroid1[0] - agent_radius, centroid1[1])
-			offsetcenter2Left = (centroid2[0] - agent_radius, centroid2[1])
-			if (not hasObstacleBetween(offsetcenter1Top, offsetcenter2Top, world) and
-				not hasObstacleBetween(offsetcenter1Bottom, offsetcenter2Bottom, world) and
-				not hasObstacleBetween(offsetcenter1Right, offsetcenter2Right, world) and
-				not hasObstacleBetween(offsetcenter1Left, offsetcenter2Left, world)):
-				line = (centroid1, centroid2)
-				edges.append(line)
+	disNodes = sorted(nodes, key=lambda p: distance((0,0), p))
+	print(disNodes)
+	# for centroid1 in nodes:
+	# 	inside_points = filter(lambda p: p != centroid1, nodes)
+	# 	for centroid2 in nodes:
+	# 		offsetcenter1Top = (centroid1[0], centroid1[1] + agent_radius)
+	# 		offsetcenter2Top = (centroid2[0], centroid2[1] + agent_radius)
+	# 		offsetcenter1Bottom = (centroid1[0], centroid1[1] - agent_radius)
+	# 		offsetcenter2Bottom = (centroid2[0], centroid2[1] - agent_radius)
+	# 		offsetcenter1Right = (centroid1[0] + agent_radius, centroid1[1])
+	# 		offsetcenter2Right = (centroid2[0] + agent_radius, centroid2[1])
+	# 		offsetcenter1Left = (centroid1[0] - agent_radius, centroid1[1])
+	# 		offsetcenter2Left = (centroid2[0] - agent_radius, centroid2[1])
+	# 		if (not hasObstacleBetween(offsetcenter1Top, offsetcenter2Top, world) and
+	# 			not hasObstacleBetween(offsetcenter1Bottom, offsetcenter2Bottom, world) and
+	# 			not hasObstacleBetween(offsetcenter1Right, offsetcenter2Right, world) and
+	# 			not hasObstacleBetween(offsetcenter1Left, offsetcenter2Left, world)):
+	# 			line = (centroid1, centroid2)
+	# 			edges.append(line)
+	edges1 = create_lines(disNodes,worldObstacles,agent_radius)
+	# revList = sorted(nodes, key=lambda p: distance((900,900), p))
+	# edges2 = create_lines(revList,worldObstacles,agent_radius)
+	# midList = sorted(nodes, key=lambda p: distance(reference_point, p))
+
+	# edges3 = create_lines(midList,worldObstacles,agent_radius)
+	edges = list(set(edges1))
+
 
 
 
