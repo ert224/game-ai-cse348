@@ -134,7 +134,6 @@ def mergePolys(polySet):
                     # Merge the points and create a new ManualObstacle if the resulting polygon is convex and not already in merged
                     holdPoints = sortCounterClockwise(set(triangle1.getPoints() + triangle2.getPoints()+ triangle3.getPoints()))
                     if isConvex(holdPoints) and checkSubsetPoly(merged, holdPoints):
-                        print(holdPoints)
                         manualObstacle = ManualObstacle(holdPoints)
                         merged.add(manualObstacle)
     return merged
