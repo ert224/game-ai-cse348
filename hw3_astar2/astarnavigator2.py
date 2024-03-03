@@ -102,10 +102,15 @@ def unobstructedNetwork(network, worldLines, world):
 ### worldLines: all the lines in the world
 ### agent: the Agent object
 def clearShot(p1, p2, worldLines, worldPoints, agent):
-    ### YOUR CODE GOES BELOW HERE ###
+    # Check for obstacles between p1 and p2
+    for line in worldLines:
+        if rayTraceWorldNoEndPoints(p1, p2, [line]) is not None:
+            return False  # Obstacle detected, path is not clear
+    
+    # If no obstacles found, instruct the agent to move straight to dest
+    agent.moveToTarget(p2)
+    return True
 
-    ### YOUR CODE GOES ABOVE HERE ###
-    return False
 
 ### Given a location, find the closest pathnode that the agent can get to without collision
 ### agent: the agent
