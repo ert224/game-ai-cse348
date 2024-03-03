@@ -60,8 +60,8 @@ world.initializeResources([(350,550), (750, 600), (700, 750), (1050, 300), (900,
 world.debugging = True
 
 g = NearestGatherer(NPC, (50, 50), 0.0, SPEED, world)
-nav2 = cloneAStarNavigator(nav)
-g.setNavigator(nav2)
+# nav2 = cloneAStarNavigator(nav)
+# g.setNavigator(nav2)
 g.setTargets(list(map(getLocation, list(world.resources))))
 world.addNPC(g)
 

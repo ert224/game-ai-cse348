@@ -53,6 +53,8 @@ class AStarNavigator2(PathNetworkNavigator):
 				### Find the path nodes closest to source and destination.
 				start = getOnPathNetwork(source, self.pathnodes, self.world.getLinesWithoutBorders(), self.agent)
 				end = getOnPathNetwork(dest, self.pathnodes, self.world.getLinesWithoutBorders(), self.agent)
+				print("start",start)
+				print("end",end)
 				if start != None and end != None:
 					### Remove edges from the path network that intersect gates
 					newnetwork = unobstructedNetwork(self.pathnetwork, self.world.getGates(), self.world)
@@ -82,8 +84,10 @@ class AStarNavigator2(PathNetworkNavigator):
 	def smooth(self):
 		return mySmooth(self)
 
+# Dont have to wait to reach a node to update 
 	def update(self, delta):
 		myUpdate(self, delta)
+
 
 
 ### Removes any edge in the path network that intersects a worldLine (which should include gates).
@@ -103,7 +107,6 @@ def unobstructedNetwork(network, worldLines, world):
 ### worldLines: all the lines in the world
 ### agent: the Agent object
 def clearShot(p1, p2, worldLines, worldPoints, agent):
-    # Check for obstacles between p1 and p2
     for line in worldLines:
         if rayTraceWorldNoEndPoints(p1, p2, [line]) is not None:
         	# path is blocked
@@ -124,8 +127,8 @@ def hasObstacleBetween(point1, point2, worldLines):
 ### pathnodes: a list of pathnodes, where each pathnode is an (x, y) point
 ### world: pointer to the world
 def getOnPathNetwork(location, pathnodes, worldLines, agent):
-    ordered_nodes = sorted(pathnodes, key=lambda p: distance(location, p))
-    for node in ordered_nodes:
+    sortedNodes = sorted(pathnodes, key=lambda p: distance(location, p))
+    for node in sortedNodes:
         if not hasObstacleBetween(location, node, worldLines):
     		# Return the closest reachable path node
             return node  
@@ -173,21 +176,93 @@ def astar(init, goal, network):
     return path, closed
 
 
+# Navigator
+### Path: the planned path of nodes
+### World: a pointer to the world object
+### Agent: the agent doing the navigation
+### source: where starting from
+### destination: where trying to go
 
-def myUpdate(nav, delta):
-	### YOUR CODE GOES BELOW HERE ###
-	
-	### YOUR CODE GOES ABOVE HERE ###
-	return None
+# Agent
+### moveTarget: where to move to. Setting this to non-None value activates movement (update fn)
+### moveOrigin: where moving from.
+### navigator: model that does path planning
+### firerate: how often agent can fire
+### firetimer: how long since last firing
+### canfire: can the agent fire?
+### hitpoints: amount of damage the agent can take
+### team: symbol referring to the team (or None)
+### distanceTraveled: the total amount of distance traveled by the agent
 
-
-
+#world 
+### Gates: lines (p1, p2) where gates can appear
+### timer: running timer
+### alarm: when timer is greater than this number, gate switches
+### gate: the active gate
 
 def myCheckpoint(nav):
-	### YOUR CODE GOES BELOW HERE ###
-	
-	### YOUR CODE GOES ABOVE HERE ###
-	return None
+    # agent = nav.agent
+    # world = nav.world
+    # source = nav.source
+    # desPath = nav.path
+    # dest = nav.destination
+    # move_target = agent.getMoveTarget()
+
+    # # Check if the entire path is still valid
+    # path_valid = True
+    # for i in range(len(desPath) - 1):
+    #     point1 = desPath[i]
+    #     point2 = desPath[i + 1]
+    #     if hasObstacleBetween(point1, point2, world.getLines()) or hasObstacleBetween(point1, point2, world.getLinesWithoutBorders()):
+    #         path_valid = False
+    #         break
+
+    # if not path_valid:
+    #     # Create a new path
+    #     new_path = getOnPathNetwork(source, dest, world.getLines(), world.getLinesWithoutBorders())
+    #     if new_path:
+    #         agent.setPath(new_path)
+    #         return
+    #     else:
+    #         # No valid path found, stop moving
+    #         agent.stopMoving()
+    # else:
+    #     # Check if the next path node is still reachable
+    #     if move_target is not None:
+    #         if hasObstacleBetween(agent.moveOrigin, move_target, world.getLines()) or hasObstacleBetween(agent.moveOrigin, move_target, world.getLinesWithoutBorders()):
+    #             # Next node is not reachable, create a new path
+    #             new_path = agent.navigator.findPath(source, dest, world.getLines(), world.getLinesWithoutBorders())
+    #             if new_path:
+    #                 agent.setPath(new_path)
+    #             else:
+    #                 # No valid path found, stop moving
+    #                 agent.stopMoving()
+
+    return None
+
+
+# ### Gets called after every agent.update()
+# ### self: the navigator object
+# ### delta: time passed since last update
+def myUpdate(nav, delta):
+    agent = nav.agent
+    world = nav.world
+    source = nav.source
+    desPath = nav.path
+    dest = nav.destination
+    moveTarget = agent.moveTarget
+    print("agent:", agent)
+    print("world", world)
+    print("sourve",source)
+    print("desPath", desPath)
+    print("destiation", dest)
+    if moveTarget is not None:
+        if hasObstacleBetween(agent.moveOrigin, moveTarget, world.getLines()):
+            # Next node is not reachable, create a new path
+            new_path = getOnPathNetwork(source, (dest[0],dest[1]), world.getLines(), world.getLinesWithoutBorders())
+            agent.setPath(new_path)
+    return None
+
 
 
 
