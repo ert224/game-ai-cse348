@@ -96,33 +96,6 @@ def sortCounterClockwise(points):
     sorted_points = sorted(points, key=lambda point: getAngle(center, point))
     return sorted_points
 
-# def mergePolys(polySet):
-    
-#     merged = set()
-#     for poly in set(polySet):
-#         for poly2 in filter(lambda x: x != poly, polySet):
-#             if polygonsAdjacent(poly.getPoints(), poly2.getPoints()):
-#                 holdPoints = sortCounterClockwise(set(poly.getPoints() + poly2.getPoints()))
-#                 if isConvex(holdPoints):
-#                     if checkSubsetPoly(polySet, holdPoints):
-#                         manualObstacle = ManualObstacle(holdPoints)
-#                         merged.add(manualObstacle)
-#     holdMerge = set() 
-#     counter = 0                  
-#     for poly in merged:
-#         # print("\n",poly.getPoints())
-#         for poly2 in merged:
-#             if poly2 == poly:
-#                 # print('same\t', poly2.getPoints())
-#                 continue
-#             # print()
-#             for p in range(1,len(poly2.getPoints())):
-#                 # print(poly.getPoints()[p-1],poly.getPoints()[p])
-#                 if not hitsObstacles(poly.getPoints()[p-1],poly.getPoints()[p],poly2.getLines()):
-#                     holdMerge.add(poly)
-       
-#     return holdMerge
-
 def mergePolys(polySet):
     merged = set()
     for triangle1 in polySet:
@@ -248,9 +221,6 @@ def myCreatePathNetwork(world, agent = None):
 			if checkSubsetPoly(worldObstacles, tri):
 				inside_points = filter(lambda i, a=x, b=y, c=z: a != i and i != b and i != c, worldPoints)
 				if isInsideObstacle(tri, inside_points):
-					# nodes.append(NavMeshUtils.getMidpointLine((x, y)))
-					# nodes.append(NavMeshUtils.getMidpointLine((x, z)))
-					# nodes.append(NavMeshUtils.getMidpointLine((y, z)))
 					polySet.add(ManualObstacle(tri))
 
 	# HW TODO: Now merge triangles in a way that preserves convexity.
@@ -284,30 +254,7 @@ def myCreatePathNetwork(world, agent = None):
  
 	agent_radius = agent.getMaxRadius()  # Get the agent's physical size
 	disNodes = sorted(nodes, key=lambda p: distance((0,0), p))
-	# print(disNodes)
-	# for centroid1 in nodes:
-	# 	inside_points = filter(lambda p: p != centroid1, nodes)
-	# 	for centroid2 in nodes:
-	# 		offsetcenter1Top = (centroid1[0], centroid1[1] + agent_radius)
-	# 		offsetcenter2Top = (centroid2[0], centroid2[1] + agent_radius)
-	# 		offsetcenter1Bottom = (centroid1[0], centroid1[1] - agent_radius)
-	# 		offsetcenter2Bottom = (centroid2[0], centroid2[1] - agent_radius)
-	# 		offsetcenter1Right = (centroid1[0] + agent_radius, centroid1[1])
-	# 		offsetcenter2Right = (centroid2[0] + agent_radius, centroid2[1])
-	# 		offsetcenter1Left = (centroid1[0] - agent_radius, centroid1[1])
-	# 		offsetcenter2Left = (centroid2[0] - agent_radius, centroid2[1])
-	# 		if (not hasObstacleBetween(offsetcenter1Top, offsetcenter2Top, world) and
-	# 			not hasObstacleBetween(offsetcenter1Bottom, offsetcenter2Bottom, world) and
-	# 			not hasObstacleBetween(offsetcenter1Right, offsetcenter2Right, world) and
-	# 			not hasObstacleBetween(offsetcenter1Left, offsetcenter2Left, world)):
-	# 			line = (centroid1, centroid2)
-	# 			edges.append(line)
 	edges1 = create_lines(disNodes,worldObstacles,agent_radius)
-	# revList = sorted(nodes, key=lambda p: distance((900,900), p))
-	# edges2 = create_lines(revList,worldObstacles,agent_radius)
-	# midList = sorted(nodes, key=lambda p: distance(reference_point, p))
-
-	# edges3 = create_lines(midList,worldObstacles,agent_radius)
 	edges = list(edges1)
 
 

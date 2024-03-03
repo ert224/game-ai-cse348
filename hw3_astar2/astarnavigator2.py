@@ -106,22 +106,10 @@ def clearShot(p1, p2, worldLines, worldPoints, agent):
     # Check for obstacles between p1 and p2
     for line in worldLines:
         if rayTraceWorldNoEndPoints(p1, p2, [line]) is not None:
-            return False  # Obstacle detected, path is not clear
-    
-    # If no obstacles found, instruct the agent to move straight to dest
+        	# path is blocked
+            return False  
     agent.moveToTarget(p2)
     return True
-
-# ### Distance between two points (x1,y1) and (x2,y2)
-# def distance(p1, p2):
-# 	return (((p2[0]-p1[0])**2) + ((p2[1]-p1[1])**2))**0.5
-
-# def rayTraceWorld(p1, p2, worldLines):
-# 	for l in worldLines:
-# 		hit = rayTrace(p1, p2, l)
-# 		if hit != None:
-# 			return hit
-# 	return None
 
 # Function to check for obstacles between two points
 def hasObstacleBetween(point1, point2, worldLines):
@@ -136,17 +124,13 @@ def hasObstacleBetween(point1, point2, worldLines):
 ### pathnodes: a list of pathnodes, where each pathnode is an (x, y) point
 ### world: pointer to the world
 def getOnPathNetwork(location, pathnodes, worldLines, agent):
-    # Sort path nodes based on their distances from the location
     ordered_nodes = sorted(pathnodes, key=lambda p: distance(location, p))
-    
-    # Iterate through sorted path nodes to find the closest one that the agent can reach without collision
     for node in ordered_nodes:
         if not hasObstacleBetween(location, node, worldLines):
-            return node  # Return the closest reachable path node
-    
-    return None  # Return None if no reachable path node is found
-
+    		# Return the closest reachable path node
+            return node  
 	### YOUR CODE GOES ABOVE HERE ###
+    return None  # Return None if no reachable path node is found
 
 def clashesWithObstacle(point1, point2, obstacles):
 	for obstacle in obstacles:
@@ -168,10 +152,8 @@ def astar(init, goal, network):
     closed = set()
     closed.add(init)
 
-    # Main loop
     while init != goal:
         neighbors = [node for edge in network for node in edge if init in edge and node != init]
-        # Sort the neighbors by their distance to the goal
         neighbors.sort(key=lambda node: distance(node, goal))
         next_node = None
 
@@ -189,29 +171,6 @@ def astar(init, goal, network):
             break
 
     return path, closed
-
-def create_lines(init, goal, network):
-    path = []
-    open = []
-    closed = set()
-    closed.add(init)
-    exitCounter = len(network)
-    while exitCounter:
-        closestPoints = sorted(network, key=lambda p: distance(init, p))
-        closest_point = None
-        for currPoint in closestPoints:
-            if currPoint not in closed:
-                closest_point = currPoint
-                break
-        
-        if closest_point:
-            path.append(closest_point)
-            closed.add(closest_point)
-            init = closest_point
-        
-        exitCounter -= 1
-    
-    return path
 
 
 
