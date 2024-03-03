@@ -56,6 +56,7 @@ class AStarNavigator2(PathNetworkNavigator):
 				if start != None and end != None:
 					### Remove edges from the path network that intersect gates
 					newnetwork = unobstructedNetwork(self.pathnetwork, self.world.getGates(), self.world)
+					print("\n",newnetwork)
 					closedlist = []
 					### Create the path by traversing the pathnode network until the path node closest to the destination is reached
 					path, closedlist = astar(start, end, newnetwork)
@@ -111,6 +112,23 @@ def clearShot(p1, p2, worldLines, worldPoints, agent):
     agent.moveToTarget(p2)
     return True
 
+# ### Distance between two points (x1,y1) and (x2,y2)
+# def distance(p1, p2):
+# 	return (((p2[0]-p1[0])**2) + ((p2[1]-p1[1])**2))**0.5
+
+# def rayTraceWorld(p1, p2, worldLines):
+# 	for l in worldLines:
+# 		hit = rayTrace(p1, p2, l)
+# 		if hit != None:
+# 			return hit
+# 	return None
+
+# Function to check for obstacles between two points
+def hasObstacleBetween(point1, point2, worldLines):
+	for line in worldLines:
+		if rayTraceWorld(point1, point2, [line]) is not None:
+			return True  # Obstacle detected
+	return False
 
 ### Given a location, find the closest pathnode that the agent can get to without collision
 ### agent: the agent
@@ -118,13 +136,23 @@ def clearShot(p1, p2, worldLines, worldPoints, agent):
 ### pathnodes: a list of pathnodes, where each pathnode is an (x, y) point
 ### world: pointer to the world
 def getOnPathNetwork(location, pathnodes, worldLines, agent):
-	node = None
-	### YOUR CODE GOES BELOW HERE ###
+    # Sort path nodes based on their distances from the location
+    ordered_nodes = sorted(pathnodes, key=lambda p: distance(location, p))
+    
+    # Iterate through sorted path nodes to find the closest one that the agent can reach without collision
+    for node in ordered_nodes:
+        if not hasObstacleBetween(location, node, worldLines):
+            return node  # Return the closest reachable path node
+    
+    return None  # Return None if no reachable path node is found
 
 	### YOUR CODE GOES ABOVE HERE ###
-	return node
 
-
+def clashesWithObstacle(point1, point2, obstacles):
+	for obstacle in obstacles:
+			if not (rayTraceWorld(point1, point2, list(obstacle.getLines())) is None):
+				return True # yes there is an obstacle 
+	return False  # no there is no obstacle between the two points 
 
 ### Implement the a-star algorithm
 ### Given:
@@ -135,14 +163,55 @@ def getOnPathNetwork(location, pathnodes, worldLines, agent):
 ### 1. the path, which is a list of states that are connected in the path network
 ### 2. the closed list, the list of pathnodes visited during the search process
 def astar(init, goal, network):
-	path = []
-	open = []
-	closed = []
-	### YOUR CODE GOES BELOW HERE ###
-	
-	### YOUR CODE GOES ABOVE HERE ###
-	return path, closed
+    path = []
+    open_list = []
+    closed = set()
+    closed.add(init)
 
+    # Main loop
+    while init != goal:
+        neighbors = [node for edge in network for node in edge if init in edge and node != init]
+        # Sort the neighbors by their distance to the goal
+        neighbors.sort(key=lambda node: distance(node, goal))
+        next_node = None
+
+        for neighbor in neighbors:
+            if neighbor not in closed:
+                next_node = neighbor
+                break
+
+        if next_node:
+            path.append(next_node)
+            open_list.append(next_node)
+            closed.add(next_node)
+            init = next_node
+        else:
+            break
+
+    return path, closed
+
+def create_lines(init, goal, network):
+    path = []
+    open = []
+    closed = set()
+    closed.add(init)
+    exitCounter = len(network)
+    while exitCounter:
+        closestPoints = sorted(network, key=lambda p: distance(init, p))
+        closest_point = None
+        for currPoint in closestPoints:
+            if currPoint not in closed:
+                closest_point = currPoint
+                break
+        
+        if closest_point:
+            path.append(closest_point)
+            closed.add(closest_point)
+            init = closest_point
+        
+        exitCounter -= 1
+    
+    return path
 
 
 
