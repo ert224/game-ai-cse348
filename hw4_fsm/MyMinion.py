@@ -28,7 +28,7 @@ class MyMinion(Minion):
 	
 	def __init__(self, position, orientation, world, image = NPC, speed = SPEED, viewangle = 360, hitpoints = HITPOINTS, firerate = FIRERATE, bulletclass = SmallBullet):
 		Minion.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass)
-		self.states = [Idle,Move,ShootTower,ShootBase]
+		self.states = [Idle,Move,ShootTower,ShootBase,ShootMinion]
 		### Add your states to self.states (but don't remove Idle)
 		### YOUR CODE GOES BELOW HERE ###
 		# self.states += [Move, Kill]
