@@ -121,11 +121,19 @@ class Sequence(BTNode):
 	### execute() is called every tick. It recursively tries to execute the currently indexed child.
 	### If a child fails, the sequence fails and returns False.
 	### If a child succeeds, the sequence goes on to the next child on the next tick. If the sequence gets to the end of the list, with all children succeeding, the sequence succeeds.
-	### If a child requires several ticks to complete execution, then the child will return None. If a child returns None, the sequence also returns None.
-	### If a sequence node has no children, it succeeds automatically.
+	### If a child requires several ticks to complete execution, then the child will return None. If a child returns none, the sequence also returns None.
+	### IF a sequence node has no children, it succeeds automatically.
 	def execute(self, delta = 0):
 		BTNode.execute(self, delta)
 		### YOUR CODE GOES BELOW HERE ###
+
+		if self.getCurrentIndex() < self.getNumChildren():
+			success = self.getChild(self.getCurrentIndex()).execute()
+			if success is not None:
+				if not success:
+					return False
+				self.setCurrentIndex(self.getCurrentIndex() + 1)
+			return None
 
 		### YOUR CODE GOES ABOVE HERE ###
 		return True
@@ -134,20 +142,24 @@ class Sequence(BTNode):
 ### Selector
 ###
 ### A selector node tries each child in order until one succeeds or they all fail. If any child succeeds, the selector node also succeeds and stops trying children. If all children fail, then the selector node also fails.
-		
 class Selector(BTNode):
 
 	### execute() is called every tick. It recursively tries to execute the currently indexed child.
 	### If the child succeeds, the selector node succeeds and returns True.
-	### If the child fails, the selector goes on to the next child in the next tick. If the selector gets to the end of the list and all children have failed, the selector fails and returns False.
-	### If a child requires several ticks to complete execution, then the child will return None. If a child returns None, the selector also returns None.
-	### If a selector node has no children, it fails.
+	### IF the child fails, the selector goes on to the next child in the next tick. If the selector gets to the end of the list and all children have failed, the selector fails and returns False.
+	### If a child requires several ticks to complete execution, then the child will return None. If a child returns none, the sequence also returns None.
+	### IF a sequence node has no children, it succeeds fails.
 	def execute(self, delta = 0):
 		BTNode.execute(self, delta)
 		### YOUR CODE GOES BELOW HERE ###
-
+		if self.getCurrentIndex() < self.getNumChildren():
+			success = self.getChild(self.getCurrentIndex()).execute()
+			if success is not None:
+				if success:
+					return True
+				self.setCurrentIndex(self.getCurrentIndex() + 1)
+			return None		
 		### YOUR CODE GOES ABOVE HERE ###
 		return False
-
 
 

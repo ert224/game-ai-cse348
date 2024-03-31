@@ -34,6 +34,7 @@ def treeSpec(agent):
 	spec = None
 	### YOUR CODE GOES BELOW HERE ###
 
+	spec = [Selector, (Retreat, 0.7), [Sequence, CustomChaseHero, CustomKillHero]]
 	### YOUR CODE GOES ABOVE HERE ###
 	return spec
 
@@ -488,4 +489,57 @@ class BuffDaemon(BTNode):
 
 #################################
 ### MY CUSTOM BEHAVIOR CLASSES
+
+class CustomChaseHero(ChaseHero):
+	def shootNearMinion(self):
+		enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())
+		if len(enemies) == 0:
+			return
+		target = None
+		dist = 0
+		for e in enemies:
+			if isinstance(e, Minion):
+				d = distance(self.agent.getLocation(), e.getLocation())
+				if target == None or d < dist:
+					target = e
+					dist = d
+		if dist < self.agent.getRadius() * AREAEFFECTRANGE:
+			self.agent.areaEffect()
+		if dist < BIGBULLETRANGE:
+			self.shootTarget(target)
+
+	def shootTarget(self, target):
+		if self.agent is not None and target is not None:
+			self.agent.turnToFace(target.getLocation())
+			self.agent.shoot()
+   
+	def execute(self, delta = 0):
+		BTNode.execute(self, delta)
+		if self.target == None or self.target.isAlive() == False:
+			# fails executability conditions
+			return False
+		if distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE:
+			# succeeded
+			return True
+		# executing
+		self.timer = self.timer - 1
+		if self.timer <= 0:
+			navTarget = self.chooseNavigationTarget()
+			if navTarget is not None:
+				self.agent.navigateTo(navTarget)
+		self.shootNearMinion()
+		return None
+
+class CustomKillHero(KillHero):
+	def execute(self, delta = 0):
+		BTNode.execute(self, delta)
+		if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
+			return False
+		if self.target.isAlive() == False:
+			return True
+		#executing
+		if distance(self.agent.getLocation(), self.target.getLocation()) < self.agent.getRadius() * AREAEFFECTRANGE:
+			self.agent.areaEffect()
+		self.shootAtTarget()
+		return None
 
