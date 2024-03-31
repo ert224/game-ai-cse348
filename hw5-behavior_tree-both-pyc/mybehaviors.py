@@ -490,7 +490,7 @@ class BuffDaemon(BTNode):
 #################################
 ### MY CUSTOM BEHAVIOR CLASSES
 
-class CustomChaseHero(ChaseHero):
+class MoveToHero(ChaseHero):
 	def shootNearMinion(self):
 		enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())
 		if len(enemies) == 0:
@@ -530,16 +530,68 @@ class CustomChaseHero(ChaseHero):
 		self.shootNearMinion()
 		return None
 
-class CustomKillHero(KillHero):
-	def execute(self, delta = 0):
-		BTNode.execute(self, delta)
+class ExecuteHero(KillHero):
+
+	def execute(self, delta=0):
+    #  float issues yayyyyyyyyyyyyyyy
+    # couldn't solve the float issues same as Astar gg
+		def isInsideObstacle(point, worldObstacles):
+			for obstacle in worldObstacles:
+				# Convert the obstacle points to tuples if they are not already tuples
+				obstacle = [tuple(coord) if isinstance(coord, list) else coord for coord in obstacle]
+				if pointInsidePolygonPoints(point, obstacle):
+					return True
+			return False
+
+
+
+		def hitsObstacles(p1, p2, lines):
+			if not isinstance(p1, tuple) or not isinstance(p2, tuple):
+				raise TypeError("p1 and p2 must be tuples representing points")
+			if len(p1) != 2 or len(p2) != 2:
+				raise ValueError("p1 and p2 must be tuples of length 2 representing points")
+
+			hit = rayTraceWorldNoEndPoints(p1, p2, lines)
+			if hit == p1 or hit == p2:
+				return False
+			return hit
+
+
+		def angleBetweenPoints(point1, point2):
+			x1, y1 = point1
+			x2, y2 = point2
+			angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
+   			# Generate a random offset between -180 and 180 degrees
+			random_offset = random.uniform(-180, 180)  
+			return angle + random_offset
+
+		def calculateNewLocation(current_location, angle, distance):
+			x, y = current_location
+			new_x = x + distance * math.cos(math.radians(angle))
+			new_y = y + distance * math.sin(math.radians(angle))
+			return new_x, new_y  # Return the new coordinates as a tuple
+
+
+		DODGERANGE = 50
+		ret = BTNode.execute(self, delta)
 		if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
 			return False
 		if self.target.isAlive() == False:
 			return True
-		#executing
+		# executing
 		if distance(self.agent.getLocation(), self.target.getLocation()) < self.agent.getRadius() * AREAEFFECTRANGE:
 			self.agent.areaEffect()
 		self.shootAtTarget()
-		return None
 
+		# Check for bullets and dodge if needed
+		bullets = self.agent.world.getBullets()
+		for bullet in bullets:
+			if distance(self.agent.getLocation(), bullet.getLocation()) < DODGERANGE:
+				angle = angleBetweenPoints(self.agent.getLocation(), bullet.getLocation())
+				# new_location = calculateNewLocation(self.agent.getLocation(), angle, DODGERANGE)
+				# print("new_location", new_location)
+				# Check if the new location is not inside an obstacle and does not crash with an obstacle edge
+				# if not isInsideObstacle(new_location, self.agent.world.getPoints()) and not hitsObstacles(self.agent.getLocation(), new_location, self.agent.world.getLines()):
+				self.agent.dodge(angle)
+
+		return None
