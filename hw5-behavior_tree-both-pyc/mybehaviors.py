@@ -27,14 +27,32 @@ from btnode import *
 
 ###########################
 ### SET UP BEHAVIOR TREE
+# def angleBetweenPoints(point1, point2):
+# 	x1, y1 = point1
+# 	x2, y2 = point2
+# 	angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
+# 	random_offset = random.uniform(-180, 180)  
+# 	return angle + random_offset
 
+def calculateDodgeAngle(agent):
+    # Calculate dodge angle randomly
+    dodge_angle = random.uniform(0, 360)
+    # Check if the dodge location is valid
+    dodge_vector = (math.cos(math.radians(dodge_angle)), -math.sin(math.radians(dodge_angle)))
+    dodge_location = (agent.getLocation()[0] + dodge_vector[0] * agent.getMaxRadius(), agent.getLocation()[1] + dodge_vector[1] * agent.getMaxRadius())
+    possible_destinations = agent.getPossibleDestinations()
+    if dodge_location in possible_destinations:
+        return dodge_angle
+    else:
+        return None
 
 def treeSpec(agent):
 	myid = str(agent.getTeam())
+	agent.firerate = 0
 	spec = None
 	### YOUR CODE GOES BELOW HERE ###
 
-	spec = [Selector, (Retreat, 0.7), [Sequence, CustomChaseHero, CustomKillHero]]
+	spec = [Selector, (Retreat, 0.7), [Sequence, MoveToHero, ExecuteHero]]
 	### YOUR CODE GOES ABOVE HERE ###
 	return spec
 
@@ -42,7 +60,7 @@ def myBuildTree(agent):
 	myid = str(agent.getTeam())
 	root = None
 	### YOUR CODE GOES BELOW HERE ###
-	
+
 	### YOUR CODE GOES ABOVE HERE ###
 	return root
 
@@ -137,9 +155,63 @@ class MoveToTarget(BTNode):
 
 
 class Retreat(BTNode):
-	
-	### percentage: Percentage of hitpoints that must have been lost
-	
+	def enter(self):
+		BTNode.enter(self)
+		self.timer = 50
+		base = self.agent.world.getBaseForTeam(self.agent.getTeam())
+		if base:
+			self.agent.navigateTo(base.getLocation())
+		return None
+
+	def execute(self, delta=0):
+		BTNode.execute(self, delta)
+		if self.agent.getHitpoints() > self.agent.getMaxHitpoints() * self.percentage:
+			print("exec", self.id, "false")
+			return False
+		elif self.agent.getHitpoints() == self.agent.getMaxHitpoints():
+			print("exec", self.id, "true")
+			return True
+
+		self.timer -= 1
+		if self.timer <= 0:
+			base = self.agent.world.getBaseForTeam(self.agent.getTeam())
+			if base:
+				self.agent.navigateTo(base.getLocation())
+
+		self.shootMinions()
+		self.dodgeBullets()  
+		return None
+
+	def shootAtTarget(self, target):
+		if self.agent is not None and target is not None:
+			self.agent.turnToFace(target.getLocation())
+			self.agent.shoot()
+
+	def shootMinions(self):
+		enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())
+		if len(enemies) == 0:
+			return
+		target = None
+		dist = 0
+		for e in enemies:
+			if isinstance(e, Minion):
+				d = distance(self.agent.getLocation(), e.getLocation())
+				if target == None or d < dist:
+					target = e
+					dist = d
+		if dist < self.agent.getRadius() * AREAEFFECTRANGE:
+			self.agent.areaEffect()
+		if dist < BIGBULLETRANGE:
+			self.shootAtTarget(target)
+
+	def dodgeBullets(self):
+		DODGERANGE = 50
+		bullets = self.agent.world.getBullets()
+		for bullet in bullets:
+			if distance(self.agent.getLocation(), bullet.getLocation()) < DODGERANGE:
+				angle = calculateDodgeAngle(self.agent)
+				self.agent.dodge(angle)
+
 	def parseArgs(self, args):
 		BTNode.parseArgs(self, args)
 		self.percentage = 0.5
@@ -152,25 +224,34 @@ class Retreat(BTNode):
 
 	def enter(self):
 		BTNode.enter(self)
+		self.timer = 50
 		base = self.agent.world.getBaseForTeam(self.agent.getTeam())
 		if base:
 			self.agent.navigateTo(base.getLocation())
-	
-	def execute(self, delta = 0):
+		return None
+
+	def execute(self, delta=0):
 		ret = BTNode.execute(self, delta)
 		if self.agent.getHitpoints() > self.agent.getMaxHitpoints() * self.percentage:
 			# fail executability conditions
 			print("exec", self.id, "false")
 			return False
 		elif self.agent.getHitpoints() == self.agent.getMaxHitpoints():
-			# Exection succeeds
+			# Execution succeeds
 			print("exec", self.id, "true")
 			return True
 		else:
-			# executing
+			# Executing
+			DODGERANGE = 50
+			bullets = self.agent.world.getBullets()
+			for bullet in bullets:
+				if distance(self.agent.getLocation(), bullet.getLocation()) < DODGERANGE:
+					# Calculate the angle to dodge the bullet
+					angle = calculateDodgeAngle(self.agent)
+					# Dodge the bullet by moving perpendicular to its trajectory
+					self.agent.dodge(angle)
 			return None
 		return ret
-
 ##################
 ### ChaseMinion
 ###
@@ -491,107 +572,94 @@ class BuffDaemon(BTNode):
 ### MY CUSTOM BEHAVIOR CLASSES
 
 class MoveToHero(ChaseHero):
-	def shootNearMinion(self):
-		enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())
-		if len(enemies) == 0:
-			return
-		target = None
-		dist = 0
-		for e in enemies:
-			if isinstance(e, Minion):
-				d = distance(self.agent.getLocation(), e.getLocation())
-				if target == None or d < dist:
-					target = e
-					dist = d
-		if dist < self.agent.getRadius() * AREAEFFECTRANGE:
-			self.agent.areaEffect()
-		if dist < BIGBULLETRANGE:
-			self.shootTarget(target)
+    def enter(self):
+        BTNode.enter(self)
+        self.timer = 50
+        enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())
+        for e in enemies:
+            if isinstance(e, Hero):
+                self.target = e
+                navTarget = self.chooseNavigationTarget()
+                if navTarget is not None:
+                    self.agent.navigateTo(navTarget)
+                return None
 
-	def shootTarget(self, target):
-		if self.agent is not None and target is not None:
-			self.agent.turnToFace(target.getLocation())
-			self.agent.shoot()
-   
-	def execute(self, delta = 0):
-		BTNode.execute(self, delta)
-		if self.target == None or self.target.isAlive() == False:
-			# fails executability conditions
-			return False
-		if distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE:
-			# succeeded
-			return True
-		# executing
-		self.timer = self.timer - 1
-		if self.timer <= 0:
-			navTarget = self.chooseNavigationTarget()
-			if navTarget is not None:
-				self.agent.navigateTo(navTarget)
-		self.shootNearMinion()
-		return None
+    def execute(self, delta=0):
+        BTNode.execute(self, delta)
+        if self.target == None or self.target.isAlive() == False:
+            print("exec", self.id, "false")
+            return False
+        if distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE:
+            print("exec", self.id, "true")
+            return True
+
+        self.timer -= 1
+        if self.timer <= 0:
+            navTarget = self.chooseNavigationTarget()
+            if navTarget is not None:
+                self.agent.navigateTo(navTarget)
+
+        self.shootMinions()
+        self.dodgeBullets()  
+        return None
+
+    def shootAtTarget(self, target):
+        if self.agent is not None and target is not None:
+            self.agent.turnToFace(target.getLocation())
+            self.agent.shoot()
+
+    def shootMinions(self):
+        enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())
+        if len(enemies) == 0:
+            return
+        target = None
+        dist = 0
+        for e in enemies:
+            if isinstance(e, Minion):
+                d = distance(self.agent.getLocation(), e.getLocation())
+                if target == None or d < dist:
+                    target = e
+                    dist = d
+        if dist < self.agent.getRadius() * AREAEFFECTRANGE:
+            self.agent.areaEffect()
+        if dist < BIGBULLETRANGE:
+            self.shootAtTarget(target)
+
+    def dodgeBullets(self):
+        DODGERANGE = 50
+        bullets = self.agent.world.getBullets()
+        for bullet in bullets:
+            if distance(self.agent.getLocation(), bullet.getLocation()) < DODGERANGE:
+                angle = calculateDodgeAngle(self.agent)
+                self.agent.dodge(angle)
+
+
 
 class ExecuteHero(KillHero):
+    def execute(self, delta=0):
+        DODGERANGE = 50
+        ret = BTNode.execute(self, delta)
 
-	def execute(self, delta=0):
-    #  float issues yayyyyyyyyyyyyyyy
-    # couldn't solve the float issues same as Astar gg
-		def isInsideObstacle(point, worldObstacles):
-			for obstacle in worldObstacles:
-				# Convert the obstacle points to tuples if they are not already tuples
-				obstacle = [tuple(coord) if isinstance(coord, list) else coord for coord in obstacle]
-				if pointInsidePolygonPoints(point, obstacle):
-					return True
-			return False
+        # Check if the target is still valid and within shooting range
+        if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
+            return False
+        if self.target.isAlive() == False:
+            return True
 
+        if distance(self.agent.getLocation(), self.target.getLocation()) < self.agent.getRadius() * AREAEFFECTRANGE:
+            self.agent.areaEffect()
 
+        self.shootAtTarget()
 
-		def hitsObstacles(p1, p2, lines):
-			if not isinstance(p1, tuple) or not isinstance(p2, tuple):
-				raise TypeError("p1 and p2 must be tuples representing points")
-			if len(p1) != 2 or len(p2) != 2:
-				raise ValueError("p1 and p2 must be tuples of length 2 representing points")
+        bullets = self.agent.world.getBullets()
+        for bullet in bullets:
+            if distance(self.agent.getLocation(), bullet.getLocation()) < DODGERANGE:
+                # Calculate the dodge angle
+                dodge_angle = calculateDodgeAngle(self.agent)
+                if dodge_angle is not None:
+                    self.agent.dodge(dodge_angle)
 
-			hit = rayTraceWorldNoEndPoints(p1, p2, lines)
-			if hit == p1 or hit == p2:
-				return False
-			return hit
-
-
-		def angleBetweenPoints(point1, point2):
-			x1, y1 = point1
-			x2, y2 = point2
-			angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
-   			# Generate a random offset between -180 and 180 degrees
-			random_offset = random.uniform(-180, 180)  
-			return angle + random_offset
-
-		def calculateNewLocation(current_location, angle, distance):
-			x, y = current_location
-			new_x = x + distance * math.cos(math.radians(angle))
-			new_y = y + distance * math.sin(math.radians(angle))
-			return new_x, new_y  # Return the new coordinates as a tuple
+        return None
 
 
-		DODGERANGE = 50
-		ret = BTNode.execute(self, delta)
-		if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
-			return False
-		if self.target.isAlive() == False:
-			return True
-		# executing
-		if distance(self.agent.getLocation(), self.target.getLocation()) < self.agent.getRadius() * AREAEFFECTRANGE:
-			self.agent.areaEffect()
-		self.shootAtTarget()
 
-		# Check for bullets and dodge if needed
-		bullets = self.agent.world.getBullets()
-		for bullet in bullets:
-			if distance(self.agent.getLocation(), bullet.getLocation()) < DODGERANGE:
-				angle = angleBetweenPoints(self.agent.getLocation(), bullet.getLocation())
-				# new_location = calculateNewLocation(self.agent.getLocation(), angle, DODGERANGE)
-				# print("new_location", new_location)
-				# Check if the new location is not inside an obstacle and does not crash with an obstacle edge
-				# if not isInsideObstacle(new_location, self.agent.world.getPoints()) and not hitsObstacles(self.agent.getLocation(), new_location, self.agent.world.getLines()):
-				self.agent.dodge(angle)
-
-		return None
