@@ -1,187 +1,273 @@
-'''
- * Copyright (c) 2014, 2015 Entertainment Intelligence Lab, Georgia Institute of Technology.
- * Originally developed by Mark Riedl.
- * Last edited by Mark Riedl 05/2015
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
-'''
-
-import sys, pygame, math, numpy, random, time, copy
-from pygame.locals import * 
-
-from constants import *
-from utils import *
-from core import *
-
-
-
-###############################
-### AStarNavigator2
-###
-### Creates a path node network and implements the A* algorithm to create a path to the given destination.
-			
-class AStarNavigator2(PathNetworkNavigator):
-
-				
-	### Finds the shortest path from the source to the destination using A*.
-	### self: the navigator object
-	### source: the place the agent is starting from (i.e., its current location)
-	### dest: the place the agent is told to go to
-	def computePath(self, source, dest):
-		self.setPath(None)
-		### Make sure the next and dist matrices exist
-		if self.agent != None and self.world != None: 
-			self.source = source
-			self.destination = dest
-			### Step 1: If the agent has a clear path from the source to dest, then go straight there.
-			### Determine if there are no obstacles between source and destination (hint: cast rays against world.getLines(), check for clearance).
-			### Tell the agent to move to dest
-			if clearShot(source, dest, self.world.getLinesWithoutBorders(), self.world.getPoints(), self.agent):
-				self.agent.moveToTarget(dest)
-			else:
-				### Step 2: If there is an obstacle, create the path that will move around the obstacles.
-				### Find the path nodes closest to source and destination.
-				start = getOnPathNetwork(source, self.pathnodes, self.world.getLinesWithoutBorders(), self.agent)
-				end = getOnPathNetwork(dest, self.pathnodes, self.world.getLinesWithoutBorders(), self.agent)
-				if start != None and end != None:
-					### Remove edges from the path network that intersect gates
-					newnetwork = unobstructedNetwork(self.pathnetwork, self.world.getGates(), self.world)
-					closedlist = []
-					### Create the path by traversing the pathnode network until the path node closest to the destination is reached
-					path, closedlist = astar(start, end, newnetwork)
-					if path is not None and len(path) > 0:
-						### Determine whether shortcuts are available
-						path = shortcutPath(source, dest, path, self.world, self.agent)
-						### Store the path by calling self.setPath()
-						self.setPath(path)
-						if self.path is not None and len(self.path) > 0:
-							### Tell the agent to move to the first node in the path (and pop the first node off the path)
-							first = self.path.pop(0)
-							self.agent.moveToTarget(first)
+""#line:17
+import sys ,pygame ,math ,numpy ,random ,time ,copy #line:19
+from pygame .locals import *#line:20
+from constants import *#line:22
+from utils import *#line:23
+from core import *#line:24
+def f33 (OOO00OO00O00000OO ,OO000O000OO0OO000 ):#line:27
+	if (OOO00OO00O00000OO [0 ]!=OO000O000OO0OO000 [0 ]):#line:30
+		OO00OO00OO00OOOO0 =(OOO00OO00O00000OO [1 ]-OO000O000OO0OO000 [1 ])/float (OOO00OO00O00000OO [0 ]-OO000O000OO0OO000 [0 ])#line:31
+		return OO00OO00OO00OOOO0 #line:32
+	else :#line:33
+		return None #line:34
+def f32 (OO00OO00O00OOO00O ,O00000OO00OOOO0OO ):#line:37
+	return OO00OO00O00OOO00O [1 ]-(O00000OO00OOOO0OO *OO00OO00O00OOO00O [0 ])#line:38
+def f31 (O00O0OOOOOOOO0O0O ,O00OO00OO0OO0OO00 ,O0O000OOO0OO0OOO0 ,O0OO00O0O0O0O0OO0 ):#line:46
+	OOOO0OOO00OOO0OO0 =f33 (O00O0OOOOOOOO0O0O ,O00OO00OO0OO0OO00 )#line:47
+	OOOO0000O00O0000O =f33 (O0O000OOO0OO0OOO0 ,O0OO00O0O0O0O0OO0 )#line:48
+	if (OOOO0OOO00OOO0OO0 !=OOOO0000O00O0000O ):#line:51
+		if (OOOO0OOO00OOO0OO0 is not None and OOOO0000O00O0000O is not None ):#line:55
+			OOOOOO0O00O00OOOO =f32 (O00O0OOOOOOOO0O0O ,OOOO0OOO00OOO0OO0 )#line:57
+			O0000OO0OOO0O0O0O =f32 (O0O000OOO0OO0OOO0 ,OOOO0000O00O0000O )#line:58
+			OO0O00OO0000OOO0O =(O0000OO0OOO0O0O0O -OOOOOO0O00O00OOOO )/float (OOOO0OOO00OOO0OO0 -OOOO0000O00O0000O )#line:59
+			O000O00OOO0OO00O0 =(OOOO0OOO00OOO0OO0 *OO0O00OO0000OOO0O )+OOOOOO0O00O00OOOO #line:60
+		else :#line:61
+			if (OOOO0OOO00OOO0OO0 is None ):#line:63
+				O0000OO0OOO0O0O0O =f32 (O0O000OOO0OO0OOO0 ,OOOO0000O00O0000O )#line:64
+				OO0O00OO0000OOO0O =O00O0OOOOOOOO0O0O [0 ]#line:65
+				O000O00OOO0OO00O0 =(OOOO0000O00O0000O *OO0O00OO0000OOO0O )+O0000OO0OOO0O0O0O #line:66
+			elif (OOOO0000O00O0000O is None ):#line:68
+				OOOOOO0O00O00OOOO =f32 (O00O0OOOOOOOO0O0O ,OOOO0OOO00OOO0OO0 )#line:69
+				OO0O00OO0000OOO0O =O0O000OOO0OO0OOO0 [0 ]#line:70
+				O000O00OOO0OO00O0 =(OOOO0OOO00OOO0OO0 *OO0O00OO0000OOO0O )+OOOOOO0O00O00OOOO #line:71
+			else :#line:72
+				assert false #line:73
+		return ((OO0O00OO0000OOO0O ,O000O00OOO0OO00O0 ),)#line:75
+	else :#line:76
+		OOOOOO0O00O00OOOO ,O0000OO0OOO0O0O0O =None ,None #line:81
+		if OOOO0OOO00OOO0OO0 is not None :#line:82
+			OOOOOO0O00O00OOOO =f32 (O00O0OOOOOOOO0O0O ,OOOO0OOO00OOO0OO0 )#line:83
+		if OOOO0000O00O0000O is not None :#line:85
+			O0000OO0OOO0O0O0O =f32 (O0O000OOO0OO0OOO0 ,OOOO0000O00O0000O )#line:86
+		if OOOOOO0O00O00OOOO ==O0000OO0OOO0O0O0O :#line:89
+			return O00O0OOOOOOOO0O0O ,O00OO00OO0OO0OO00 ,O0O000OOO0OO0OOO0 ,O0OO00O0O0O0O0OO0 #line:90
+		else :#line:91
+			return None #line:92
+def f30 (O0OO00O00OO0OOOOO ,O000OO0OOO0O00OO0 ,OO00O0OOO0O000000 ):#line:94
+	return O0OO00O00OO0OOOOO +EPSILON >=min (O000OO0OOO0O00OO0 ,OO00O0OOO0O000000 )and O0OO00O00OO0OOOOO -EPSILON <=max (O000OO0OOO0O00OO0 ,OO00O0OOO0O000000 )#line:95
+def f29 (O00OOOOOO0O00O00O ,OOOOOOOOO0OOO0000 ,O0OOOO0O00O000O0O ,OOO000O00O00O0OOO ):#line:103
+	OO0OOO0O00OOO0000 =f31 (O00OOOOOO0O00O00O ,OOOOOOOOO0OOO0000 ,O0OOOO0O00O000O0O ,OOO000O00O00O0OOO )#line:104
+	if OO0OOO0O00OOO0000 is not None :#line:105
+		OO0OOO0O00OOO0000 =OO0OOO0O00OOO0000 [0 ]#line:106
+		if f30 (OO0OOO0O00OOO0000 [0 ],O00OOOOOO0O00O00O [0 ],OOOOOOOOO0OOO0000 [0 ])and f30 (OO0OOO0O00OOO0000 [1 ],O00OOOOOO0O00O00O [1 ],OOOOOOOOO0OOO0000 [1 ])and f30 (OO0OOO0O00OOO0000 [0 ],O0OOOO0O00O000O0O [0 ],OOO000O00O00O0OOO [0 ])and f30 (OO0OOO0O00OOO0000 [1 ],O0OOOO0O00O000O0O [1 ],OOO000O00O00O0OOO [1 ]):#line:107
+			return OO0OOO0O00OOO0000 #line:108
+	return None #line:109
+def f15 (OOO0000O00O0OO0O0 ,O00000O0OO0000000 ):#line:111
+	return (((O00000O0OO0000000 [0 ]-OOO0000O00O0OO0O0 [0 ])**2 )+((O00000O0OO0000000 [1 ]-OOO0000O00O0OO0O0 [1 ])**2 ))**0.5 #line:112
+def f28 (O000000O0OOOO000O ,O0OO000OO00O0O0OO ,O00O0O0OOO0O0O0O0 ):#line:114
+	return f29 (O00O0O0OOO0O0O0O0 [0 ],O00O0O0OOO0O0O0O0 [1 ],O000000O0OOOO000O ,O0OO000OO00O0O0OO )#line:115
+def f13 (OOOOO0000OO00OO0O ,OO00O0O0O0OOO0OOO ,OOOOOO00O0O0OO0O0 ):#line:118
+	for O0O00O0OOO0OOO0OO in OOOOOO00O0O0OO0O0 :#line:119
+		OO0OOO00OOOO0OO00 =f28 (OOOOO0000OO00OO0O ,OO00O0O0O0OOO0OOO ,O0O00O0OOO0OOO0OO )#line:120
+		if OO0OOO00OOOO0OO00 !=None :#line:121
+			return OO0OOO00OOOO0OO00 #line:122
+	return None #line:123
+def f12 (O00OOO0O00000O00O ,O0OOO0OOOO0OOO0O0 ):#line:125
+	OOO0000O000OOO000 =f15 (O00OOO0O00000O00O [1 ],O00OOO0O00000O00O [0 ])**2.0 #line:126
+	if OOO0000O000OOO000 ==0.0 :#line:127
+		return f15 (O0OOO0OOOO0OOO0O0 ,O00OOO0O00000O00O [0 ])#line:128
+	O0OOO0OO0OO00OO00 =(O0OOO0OOOO0OOO0O0 [0 ]-O00OOO0O00000O00O [0 ][0 ],O0OOO0OOOO0OOO0O0 [1 ]-O00OOO0O00000O00O [0 ][1 ])#line:132
+	OO00O00O00OO0O0O0 =(O00OOO0O00000O00O [1 ][0 ]-O00OOO0O00000O00O [0 ][0 ],O00OOO0O00000O00O [1 ][1 ]-O00OOO0O00000O00O [0 ][1 ])#line:133
+	OO00OOOO00O0OO000 =dotProduct (O0OOO0OO0OO00OO00 ,OO00O00O00OO0O0O0 )/OOO0000O000OOO000 #line:134
+	if OO00OOOO00O0OO000 <0.0 :#line:135
+		return f15 (O0OOO0OOOO0OOO0O0 ,O00OOO0O00000O00O [0 ])#line:136
+	elif OO00OOOO00O0OO000 >1.0 :#line:137
+		return f15 (O0OOO0OOOO0OOO0O0 ,O00OOO0O00000O00O [1 ])#line:138
+	OOOO0O0O0O000OO00 =(O00OOO0O00000O00O [0 ][0 ]+(OO00OOOO00O0OO000 *(O00OOO0O00000O00O [1 ][0 ]-O00OOO0O00000O00O [0 ][0 ])),O00OOO0O00000O00O [0 ][1 ]+(OO00OOOO00O0OO000 *(O00OOO0O00000O00O [1 ][1 ]-O00OOO0O00000O00O [0 ][1 ])))#line:139
+	return f15 (O0OOO0OOOO0OOO0O0 ,OOOO0O0O0O000OO00 )#line:140
+def f20 (O00OOOOO0OOO0OO0O ,O0O0OO0O0O000O0O0 ,O000OO0O0OO0O00O0 ):#line:143
+	OOO0O00O0OO0OOOOO =None #line:144
+	OO0OO000000O0O0OO =INFINITY #line:145
+	for OO0OOO0OOO0OOO00O in O0O0OO0O0O000O0O0 :#line:146
+		if f13 (O00OOOOO0OOO0OO0O ,OO0OOO0OOO0OOO00O ,O000OO0O0OO0O00O0 )==None :#line:147
+			OO00O0000000O00O0 =f15 (O00OOOOO0OOO0OO0O ,OO0OOO0OOO0OOO00O )#line:148
+			if OOO0O00O0OO0OOOOO ==None or OO00O0000000O00O0 <OO0OO000000O0O0OO :#line:149
+				OOO0O00O0OO0OOOOO =OO0OOO0OOO0OOO00O #line:150
+				OO0OO000000O0O0OO =OO00O0000000O00O0 #line:151
+	return OOO0O00O0OO0OOOOO #line:152
+class AStarNavigator2 (PathNetworkNavigator ):#line:159
+	def computePath (OOOOO000O0OOOO0O0 ,O000OOOOO0O0O0OO0 ,O000OO000OO000O0O ):#line:166
+		OOOOO000O0OOOO0O0 .setPath (None )#line:167
+		if OOOOO000O0OOOO0O0 .agent !=None and OOOOO000O0OOOO0O0 .world !=None :#line:169
+			OOOOO000O0OOOO0O0 .source =O000OOOOO0O0O0OO0 #line:170
+			OOOOO000O0OOOO0O0 .destination =O000OO000OO000O0O #line:171
+			if f22 (O000OOOOO0O0O0OO0 ,O000OO000OO000O0O ,OOOOO000O0OOOO0O0 .world .getLinesWithoutBorders (),OOOOO000O0OOOO0O0 .world .getPoints (),OOOOO000O0OOOO0O0 .agent ):#line:175
+				OOOOO000O0OOOO0O0 .agent .moveToTarget (O000OO000OO000O0O )#line:176
+			else :#line:177
+				O0O000000OOO0O00O =f21 (O000OOOOO0O0O0OO0 ,OOOOO000O0OOOO0O0 .pathnodes ,OOOOO000O0OOOO0O0 .world .getLinesWithoutBorders (),OOOOO000O0OOOO0O0 .agent )#line:180
+				OO000O0O00OO0O0O0 =f21 (O000OO000OO000O0O ,OOOOO000O0OOOO0O0 .pathnodes ,OOOOO000O0OOOO0O0 .world .getLinesWithoutBorders (),OOOOO000O0OOOO0O0 .agent )#line:181
+				if O0O000000OOO0O00O !=None and OO000O0O00OO0O0O0 !=None :#line:182
+					O0OOO00OO0O00O000 =f23 (OOOOO000O0OOOO0O0 .pathnetwork ,OOOOO000O0OOOO0O0 .world .getGates (),OOOOO000O0OOOO0O0 .world )#line:184
+					O00O0O00O00O0O0OO =[]#line:185
+					OOOO00O00000OOO0O ,O00O0O00O00O0O0OO =f17 (O0O000000OOO0O00O ,OO000O0O00OO0O0O0 ,O0OOO00OO0O00O000 )#line:187
+					if OOOO00O00000OOO0O is not None and len (OOOO00O00000OOO0O )>0 :#line:188
+						OOOO00O00000OOO0O = shortcutPath (O000OOOOO0O0O0OO0 ,O000OO000OO000O0O ,OOOO00O00000OOO0O ,OOOOO000O0OOOO0O0 .world ,OOOOO000O0OOOO0O0 .agent )#line:190
+						OOOOO000O0OOOO0O0 .setPath (OOOO00O00000OOO0O )#line:192
+						if OOOOO000O0OOOO0O0 .path is not None and len (OOOOO000O0OOOO0O0 .path )>0 :#line:193
+							OO0000OO0000O0OOO =OOOOO000O0OOOO0O0 .path .pop (0 )#line:195
+							OOOOO000O0OOOO0O0 .agent .moveToTarget (OO0000OO0000O0OOO )#line:196
+		return None #line:197
+	def checkpoint (O00000O0OO0OOOOOO ):#line:201
+		f26 (O00000O0OO0OOOOOO )#line:202
+		return None #line:203
+	def smooth (O0O0O0O0OOO0O00O0 ):#line:207
+		return mySmooth (O0O0O0O0OOO0O00O0 )#line:208
+	def update (O0O0OO00O0OOO00OO ,O0O0O0OO00O0000OO ):#line:210
+		myUpdate (O0O0OO00O0OOO00OO ,O0O0O0OO00O0000OO )#line:211
+def f23 (O00O00O00OO0OOO0O ,O0O0O0OO0OO000O0O ,OOO00O0OO00O0O0O0 ):#line:215
+	OO00OO0O00OOOOO00 =[]#line:216
+	for OO0OO000OOO0OOO00 in O00O00O00OO0OOO0O :#line:217
+		O0O000000O0000000 =f13 (OO0OO000OOO0OOO00 [0 ],OO0OO000OOO0OOO00 [1 ],O0O0O0OO0OO000O0O )#line:218
+		if O0O000000O0000000 ==None :#line:219
+			OO00OO0O00OOOOO00 .append (OO0OO000OOO0OOO00 )#line:220
+	return OO00OO0O00OOOOO00 #line:221
+def f22 (OO00O0OO00O0OOOOO ,O00OO00OOO00OOOOO ,O0O0O000OOOO0000O ,OO0O0O00O0000OOO0 ,O0O000OOOO000000O ):#line:230
+    return False #line:242
+def f21 (O0OOOOOOOO0O00OOO ,O00O0O0OOO0O0000O ,OOOO0OOOOO00OOOO0 ,OO0OO00O00O00OOOO ):#line:249
+	OO000O00OOO0O0OO0 =None #line:250
+	OO000O00OOO0O0OO0 =f20 (O0OOOOOOOO0O00OOO ,O00O0O0OOO0O0000O ,OOOO0OOOOO00OOOO0 )#line:252
+	return OO000O00OOO0O0OO0 #line:254
+def f18 (OO000O0O0O000O0O0 ,OO000OO00O0O00OO0 ,func =lambda O0O00OOOO00O00000 :O0O00OOOO00O00000 ):#line:257
+	for OOOOOO0O0O000O0O0 in range (len (OO000OO00O0O00OO0 )):#line:258
+		if func (OO000O0O0O000O0O0 )<func (OO000OO00O0O00OO0 [OOOOOO0O0O000O0O0 ]):#line:259
+			OO000OO00O0O00OO0 .insert (OOOOOO0O0O000O0O0 ,OO000O0O0O000O0O0 )#line:260
+			return OO000OO00O0O00OO0 #line:261
+	OO000OO00O0O00OO0 .append (OO000O0O0O000O0O0 )#line:262
+	return OO000OO00O0O00OO0 #line:263
+def f17 (O0O000OO0OOOOOOOO ,OO0O000OO0O0O00OO ,OOO00OO000O0O0O00 ):#line:273
+	OOO00O0OOOO00O0O0 =[]#line:274
+	OOO0O00OOO00OOO00 =[]#line:275
+	O00OOO000O00OOO00 =[]#line:276
+	O0O000OO0OOOOOOOO =(O0O000OO0OOOOOOOO ,0 ,f15 (O0O000OO0OOOOOOOO ,OO0O000OO0O0O00OO ),None )#line:279
+	O00OOO000O00OOO00 =set ()#line:280
+	OOOOO0OOO0O0000O0 =set ()#line:281
+	OOO0O00OOO00OOO00 =[O0O000OO0OOOOOOOO ]#line:282
+	OO0OO000OOOOO000O =O0O000OO0OOOOOOOO #line:283
+	while OO0OO000OOOOO000O is not None and OO0OO000OOOOO000O [0 ]!=OO0O000OO0O0O00OO and len (OOO0O00OOO00OOO00 )>0 :#line:286
+		O00OOO000O00OOO00 .add (OO0OO000OOOOO000O [0 ])#line:287
+		OOOOO0OOO0O0000O0 .add (OO0OO000OOOOO000O )#line:288
+		OOO0O00OOO00OOO00 .pop (0 )#line:289
+		OO0O0O0OO0000OOOO =f16 (OO0OO000OOOOO000O ,OOO00OO000O0O0O00 ,OO0O000OO0O0O00OO )#line:290
+		for OO00OO0000O00OO00 in OO0O0O0OO0000OOOO :#line:291
+			if OO00OO0000O00OO00 [0 ]not in O00OOO000O00OOO00 :#line:292
+				f18 (OO00OO0000O00OO00 ,OOO0O00OOO00OOO00 ,lambda O0OOO0000OOO0000O :O0OOO0000OOO0000O [1 ]+O0OOO0000OOO0000O [2 ])#line:293
+		if len (OOO0O00OOO00OOO00 )>0 :#line:294
+			OO0OO000OOOOO000O =OOO0O00OOO00OOO00 [0 ]#line:295
+		else :#line:296
+			OO0OO000OOOOO000O =None #line:297
+	if OO0OO000OOOOO000O is not None :#line:300
+		while OO0OO000OOOOO000O [3 ]is not None :#line:301
+			OOO00O0OOOO00O0O0 .append (OO0OO000OOOOO000O [0 ])#line:302
+			O000OOOOOO0OO00OO =OO0OO000OOOOO000O [3 ]#line:303
+			for O00O000OO00O0OOO0 in list (OOOOO0OOO0O0000O0 ):#line:304
+				if O000OOOOOO0OO00OO ==O00O000OO00O0OOO0 [0 ]:#line:305
+					OO0OO000OOOOO000O =O00O000OO00O0OOO0 #line:306
+					break #line:307
+		OOO00O0OOOO00O0O0 .append (OO0OO000OOOOO000O [0 ])#line:308
+		OOO00O0OOOO00O0O0 .reverse ()#line:309
+	O00OOO000O00OOO00 =list (O00OOO000O00OOO00 )#line:310
+	return OOO00O0OOOO00O0O0 ,O00OOO000O00OOO00 #line:312
+def f16 (O000000O0OO0O0000 ,O0O0000O0OO0O00OO ,OO0O0O0O0O0O0O0OO ):#line:315
+	O0OO0OOOOOO0000OO =[]#line:316
+	for OOOOO00OOOOOOOOO0 in O0O0000O0OO0O00OO :#line:317
+		if OOOOO00OOOOOOOOO0 [0 ]==O000000O0OO0O0000 [0 ]:#line:318
+			O0OO0OOOOOO0000OO .append ((OOOOO00OOOOOOOOO0 [1 ],O000000O0OO0O0000 [1 ]+f15 (OOOOO00OOOOOOOOO0 [0 ],OOOOO00OOOOOOOOO0 [1 ]),f15 (OOOOO00OOOOOOOOO0 [1 ],OO0O0O0O0O0O0O0OO ),O000000O0OO0O0000 [0 ]))#line:319
+		elif OOOOO00OOOOOOOOO0 [1 ]==O000000O0OO0O0000 [0 ]:#line:320
+			O0OO0OOOOOO0000OO .append ((OOOOO00OOOOOOOOO0 [0 ],O000000O0OO0O0000 [1 ]+f15 (OOOOO00OOOOOOOOO0 [0 ],OOOOO00OOOOOOOOO0 [1 ]),f15 (OOOOO00OOOOOOOOO0 [0 ],OO0O0O0O0O0O0O0OO ),O000000O0OO0O0000 [0 ]))#line:321
+	return O0OO0OOOOOO0000OO #line:322
+def myUpdate (nav , delta):
+	if nav.getPath() is not None:
+		gates = nav.world.getGates()
+		last = nav.agent.getLocation()
+		for p in nav.getPath() + [nav.getDestination()]:
+			if last is not None:
+				hit = rayTraceWorld(last, p, gates)
+				if hit is not None:
+					nav.setPath(None)
+					nav.agent.stopMoving()
+					return None
+			last = p
 		return None
-		
-	### Called when the agent gets to a node in the path.
-	### self: the navigator object
-	def checkpoint(self):
-		myCheckpoint(self)
-		return None
 
-	### This function gets called by the agent to figure out if some shortcuts can be taken when traversing the path.
-	### This function should update the path and return True if the path was updated.
-	def smooth(self):
-		return mySmooth(self)
-
-	def update(self, delta):
-		myUpdate(self, delta)
-
-
-### Removes any edge in the path network that intersects a worldLine (which should include gates).
-def unobstructedNetwork(network, worldLines, world):
-	newnetwork = []
-	for l in network:
-		hit = rayTraceWorld(l[0], l[1], worldLines)
+def f26 (O00O0O0OOOO000O00 ):#line:346
+	return None #line:350
+	
+def myCheckForShortcut (nav):#line:357
+	if nav.path != None and nav.agent.moveTarget != nav.destination:
+		hit = rayTraceWorld(nav.agent.rect.center, nav.destination, nav.world.getLines())
 		if hit == None:
-			newnetwork.append(l)
-	return newnetwork
+			tooclose = False
+			for p in nav.world.getPoints():
+				if minimumDistance((nav.agent.rect.center, nav.destination), p) < nav.agent.getRadius()*2.0:
+					tooclose = True
+			if not tooclose:
+				return True
+	return False
 
-
-
-### Returns true if the agent can get from p1 to p2 directly without running into an obstacle.
-### p1: the current location of the agent
-### p2: the destination of the agent
-### worldLines: all the lines in the world
-### agent: the Agent object
-def clearShot(p1, p2, worldLines, worldPoints, agent):
-    ### YOUR CODE GOES BELOW HERE ###
-
-    ### YOUR CODE GOES ABOVE HERE ###
-    return False
-
-### Given a location, find the closest pathnode that the agent can get to without collision
-### agent: the agent
-### location: the location to check from (typically where the agent is starting from or where the agent wants to go to) as an (x, y) point
-### pathnodes: a list of pathnodes, where each pathnode is an (x, y) point
-### world: pointer to the world
-def getOnPathNetwork(location, pathnodes, worldLines, agent):
-	node = None
-	### YOUR CODE GOES BELOW HERE ###
-
-	### YOUR CODE GOES ABOVE HERE ###
-	return node
-
-
-
-### Implement the a-star algorithm
-### Given:
-### Init: a pathnode (x, y) that is part of the pathnode network
-### goal: a pathnode (x, y) that is part of the pathnode network
-### network: the pathnode network
-### Return two values: 
-### 1. the path, which is a list of states that are connected in the path network
-### 2. the closed list, the list of pathnodes visited during the search process
-def astar(init, goal, network):
-	path = []
-	open = []
-	closed = []
-	### YOUR CODE GOES BELOW HERE ###
-	
-	### YOUR CODE GOES ABOVE HERE ###
-	return path, closed
-
-
-
-
-def myUpdate(nav, delta):
-	### YOUR CODE GOES BELOW HERE ###
-	
-	### YOUR CODE GOES ABOVE HERE ###
-	return None
-
-
-
-
-def myCheckpoint(nav):
-	### YOUR CODE GOES BELOW HERE ###
-	
-	### YOUR CODE GOES ABOVE HERE ###
-	return None
-
-
-
-
-
-
-
-### This function optimizes the given path and returns a new path
-### source: the current position of the agent
-### dest: the desired destination of the agent
-### path: the path previously computed by the A* algorithm
-### world: pointer to the world
-def shortcutPath(source, dest, path, world, agent):
+def shortcutPath (source, dest, path, world, agent):#line:374
 	path = copy.deepcopy(path)
-	### YOUR CODE GOES BELOW HERE ###
-	
-	### YOUR CODE GOES BELOW HERE ###
+	alllines = world.getLines()
+	newstart = None
+	newend = None
+	for p in path:
+		fronthit = rayTraceWorld(source, p, alllines)
+		if fronthit == None:
+			tooclose = False
+			for p1 in world.getPoints():
+				if minimumDistance((source, p), p1) < world.agent.getRadius()*2.0:
+					tooclose = True
+			if not tooclose:
+				newstart = p
+		if newend == None:
+			backhit = rayTraceWorld(p, dest, alllines)
+			if backhit == None:
+				tooclose = False
+				for p1 in world.getPoints():
+					if minimumDistance((dest, p), p1) < world.agent.getRadius()*2.0:
+						tooclose = True
+				if not tooclose:
+					newend = p
+	newpath = []
+	start = False
+	end = False
+	for p in path:
+		if end == False:
+			if start == False:
+				if p == newstart:
+					newpath.append(p)
+					start = True
+			else:
+				newpath.append(p)
+			if p == newend:
+				newpath.append(p)
+				end = True
+	path = newpath
 	return path
 
+def mySmooth (nav):#line:421
+	if nav.path != None and nav.agent.moveTarget != nav.destination:
+		if myCheckForShortcut(nav):
+			nav.path = []
+			nav.agent.moveToTarget(nav.destination)
+			return True
+		elif canSmooth(nav):
+			next = nav.path.pop(0)
+			nav.agent.moveToTarget(next)
+			return True
+	return False
 
-### This function changes the move target of the agent if there is an opportunity to walk a shorter path.
-### This function should call nav.agent.moveToTarget() if an opportunity exists and may also need to modify nav.path.
-### nav: the navigator object
-### This function returns True if the moveTarget and/or path is modified and False otherwise
-def mySmooth(nav):
-	### YOUR CODE GOES BELOW HERE ###
-	
-	### YOUR CODE GOES ABOVE HERE ###
+def canSmooth (nav):#line:439
+	if nav.path != None and len(nav.path) > 0:
+		next = nav.path[0]
+		hit = rayTraceWorld(nav.agent.rect.center, next, nav.world.getLines())
+		if hit == None:
+			tooclose = False
+			for p in nav.world.getPoints():
+				if minimumDistance((nav.agent.rect.center, next), p) < nav.agent.getRadius()*2.0:
+					tooclose = True
+			if tooclose:
+				return False
+			else:
+				return True
 	return False
 
