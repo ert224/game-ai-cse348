@@ -146,22 +146,20 @@ class Planner():
     ### CODE ABOVE
     return plan, closed
   
-  
   ### Compute the heuristic value of the current state using the HSP technique.
   ### Current_state and goal_state are State objects.
   def compute_heuristic(self, current_state, goal_state, actions):
-      actions_copy = self._deep_copy_actions(actions)
-      heuristic_value = 0
-
+      actions = actions = copy.deepcopy(actions)  # Make a deep copy just in case
+      h = 0
       # Create start and end actions
       start_action = Action('start', [], current_state.propositions, [])
       end_action = Action('end', goal_state.propositions, [], [])
 
-      actions_copy.append(start_action)
-      actions_copy.append(end_action)
+      actions.append(start_action)
+      actions.append(end_action)
 
       # Build graph and initialize distances
-      graph, distances = self._build_graph(actions_copy)
+      graph, distances = self.buildGraph(actions)
 
       visited = set()
       queue = [start_action]
@@ -169,22 +167,15 @@ class Planner():
       while queue:
           node = queue.pop(0)
           visited.add(node)
-
-          # Update distances
-          self._update_distances(node, graph, distances)
-
-          # Add adjacent actions to queue
-          self._add_adjacent_actions_to_queue(node, graph, visited, queue, distances)
+          self.setDistance(node, graph, distances)
+          self.addActions(node, graph, visited, queue, distances)
 
 
-      heuristic_value = distances[end_action] - 2
+      h = distances[end_action] - 2
 
-      return heuristic_value
+      return h
 
-  def _deep_copy_actions(self, actions):
-      return [copy.deepcopy(action) for action in actions]
-
-  def _build_graph(self, actions):
+  def buildGraph(self, actions):
       graph = {}
       distances = {}
 
@@ -199,13 +190,13 @@ class Planner():
 
       return graph, distances
 
-  def _update_distances(self, node, graph, distances):
+  def setDistance(self, node, graph, distances):
       if graph[node]:
           dist = max(distances[edge[1]] for edge in graph[node])
           if dist > distances[node]:
               distances[node] = dist
 
-  def _add_adjacent_actions_to_queue(self, node, graph, visited, queue, distances):
+  def addActions(self, node, graph, visited, queue, distances):
       for action in graph:
           for edge in graph[action]:
               new_dist = distances[node] + action.cost
@@ -213,6 +204,3 @@ class Planner():
                   distances[action] = new_dist
           if action not in visited and all(any(prop in act.add_list for act in visited) for prop in action.preconditions):
               queue.append(action)
-
-
-
