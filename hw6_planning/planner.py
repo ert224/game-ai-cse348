@@ -95,61 +95,62 @@ class Planner():
   ### Generate a plan. Init and goal are State objects. Actions is a list of Action objects
   ### Return the plan and the closed list
   def astar(self, init, goal, actions):
-    plan = []    # the final plan
-    open = []    # the open list (priority queue) holding State objects
-    closed = []  # the closed list (already visited states). Holds state objects
-    ### YOUR CODE GOES HERE
+      plan = []    # the final plan
+      open = []    # the open list (priority queue) holding State objects
+      closed = []  # the closed list (already visited states). Holds state objects
 
-    def addSuccessor(state, action):
-        new_state = State(state.propositions.union(action.add_list).difference(action.delete_list))
-        new_state.parent = state
-        new_state.causing_action = action
-        new_state.g = state.g + action.cost
-        new_state.h = self.compute_heuristic(new_state, goal, actions)
-        return new_state
+      def addSuccessor(state, action):
+          new_state = State(state.propositions.union(action.add_list).difference(action.delete_list))
+          new_state.parent = state
+          new_state.causing_action = action
+          new_state.g = state.g + action.cost
+          new_state.h = self.compute_heuristic(new_state, goal, actions)
+          return new_state
 
-    def isClosed(state):
-        return any(c.propositions == state.propositions for c in closed)
+      def is_goal(state, goal_state):
+          return state.propositions.issuperset(goal_state.propositions)
 
-    def isOpen(state):
-        return any(o.propositions == state.propositions and o.get_f() < state.get_f() for o in open)
+      def isClosed(state):
+          return any(c.propositions == state.propositions for c in closed)
 
-    if (is_goal(init, goal)):
-        return plan, closed
-    open.append(init)
-    
-    endState = None
-    
-    while open and not endState:
-        currentState = min(open, key=lambda n: n.get_f())
-        open.remove(currentState)
+      def isOpen(state):
+          return any(o.propositions == state.propositions and o.get_f() < state.get_f() for o in open)
 
-        successors = []
-        for action in actions:
-            if all(prop in currentState.propositions for prop in action.preconditions):
-                new_state = addSuccessor(currentState, action)
-                successors.append(new_state)
+      if is_goal(init, goal):
+          return plan, closed
+      open.append(init)
 
-        for node in successors:
-            if not endState and not isClosed(node):
-                if is_goal(node, goal):
-                    endState = node
-                elif not isOpen(node):
-                    open.append(node)
+      endState = None
 
-        closed.append(currentState)
+      while open and not endState:
+          currentState = min(open, key=lambda n: n.get_f())
+          open.remove(currentState)
 
-    while endState and endState.causing_action:
-        plan.insert(0, endState.causing_action)
-        endState = endState.parent
+          successors = []
+          for action in actions:
+              if all(prop in currentState.propositions for prop in action.preconditions):
+                  new_state = addSuccessor(currentState, action)
+                  successors.append(new_state)
 
-    ### CODE ABOVE
-    return plan, closed
-  
+          for node in successors:
+              if not endState and not isClosed(node):
+                  if is_goal(node, goal):
+                      endState = node
+                  elif not isOpen(node):
+                      open.append(node)
+
+          closed.append(currentState)
+
+      while endState and endState.causing_action:
+          plan.insert(0, endState.causing_action)
+          endState = endState.parent
+
+      return plan, closed
+
   ### Compute the heuristic value of the current state using the HSP technique.
   ### Current_state and goal_state are State objects.
   def compute_heuristic(self, current_state, goal_state, actions):
-      actions = actions = copy.deepcopy(actions)  # Make a deep copy just in case
+      actions = copy.deepcopy(actions)  # Make a deep copy just in case
       h = 0
       # Create start and end actions
       start_action = Action('start', [], current_state.propositions, [])
@@ -169,7 +170,6 @@ class Planner():
           visited.add(node)
           self.setDistance(node, graph, distances)
           self.addActions(node, graph, visited, queue, distances)
-
 
       h = distances[end_action] - 2
 
@@ -204,3 +204,4 @@ class Planner():
                   distances[action] = new_dist
           if action not in visited and all(any(prop in act.add_list for act in visited) for prop in action.preconditions):
               queue.append(action)
+          
