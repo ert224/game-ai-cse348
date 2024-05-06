@@ -151,16 +151,28 @@ public class MyLevelGenerator{
 	{
 		MyDNA individual = new MyDNA();
 		// YOUR CODE GOES BELOW HERE
+ 		int chromosomeLength = 195;
+    	StringBuilder chromosomeBuilder = new StringBuilder(chromosomeLength);
+    	for (int i = 0; i < chromosomeLength; i++) {
+        	char randomChar = (char) ('a' + Math.random() * 26);
+        	chromosomeBuilder.append(randomChar);
+    	}
 
+   	 	individual.setChromosome(chromosomeBuilder.toString());
 		// YOUR CODE GOES ABOVE HERE
 		return individual;
 	}
+
 
 	// Returns true if the genetic algorithm should terminate.
 	private boolean terminate (ArrayList<MyDNA> population, int count)
 	{
 		boolean decision = false;
 		// YOUR CODE GOES BELOW HERE
+		double bestFit = getBestIndividual(population).getFitness();
+		boolean countExceeded = count > 2000;
+
+		decision = bestFit > 0.8 || countExceeded;
 
 		// YOUR CODE GOES ABOVE HERE
 		return decision;
@@ -171,16 +183,21 @@ public class MyLevelGenerator{
 	{
 		ArrayList<MyDNA> selected = new ArrayList<MyDNA>();
 		// YOUR CODE GOES BELOW HERE
+ 		int numToSelect = (int) (Math.random() * population.size());
 
+    	Collections.shuffle(population);
+    	selected.addAll(population.subList(0, numToSelect));
 		// YOUR CODE GOES ABOVE HERE
 		return selected;
 	}
+
 
 	// Returns the size of the population.
 	private int getPopulationSize ()
 	{
 		int num = 1; // Default needs to be changed
 		// YOUR CODE GOES BELOW HERE
+		num = 300;
 
 		// YOUR CODE GOES ABOVE HERE
 		return num;
@@ -191,7 +208,7 @@ public class MyLevelGenerator{
 	{
 		int num = 0; // Default is no crossovers
 		// YOUR CODE GOES BELOW HERE
-
+		num =150;
 		// YOUR CODE GOES ABOVE HERE
 		return num;
 
@@ -202,7 +219,14 @@ public class MyLevelGenerator{
 	{
 		MyDNA picked = null;
 		// YOUR CODE GOES BELOW HERE
-
+		if (population.size() < 2) {
+			return null;
+		}
+		
+		do {
+			int index = (int) (Math.random() * population.size());
+			picked = population.get(index);
+		} while (picked == excludeMe);
 		// YOUR CODE GOES ABOVE HERE
 		if (picked == excludeMe) {
 			return null;
@@ -237,17 +261,26 @@ public class MyLevelGenerator{
 	}
 
 	// Combine the old population and the new population and return the top fittest individuals.
-	private ArrayList<MyDNA> globalCompetition (ArrayList<MyDNA> oldPopulation, ArrayList<MyDNA> newPopulation)
-	{
-		ArrayList<MyDNA> finalPopulation = new ArrayList<MyDNA>();
-		// YOUR CODE GOES BELOW HERE
+	private ArrayList<MyDNA> globalCompetition (ArrayList<MyDNA> oldPopulation, ArrayList<MyDNA> newPopulation) {
+		ArrayList<MyDNA> finalPopulation = new ArrayList<>(getPopulationSize());
+		ArrayList<MyDNA> mergedGenes = new ArrayList<>(oldPopulation);
 
-		// YOUR CODE GOES ABOVE HERE
-		if (finalPopulation.size() != this.getPopulationSize()) {
+		mergedGenes.addAll(newPopulation);
+		mergedGenes.sort(Comparator.comparingDouble(MyDNA::getFitness).reversed());
+
+		int targetPopulationSize = getPopulationSize();
+
+		for (int i = 0; i < targetPopulationSize; i++) {
+			finalPopulation.add(mergedGenes.get(i));
+		}
+
+		if (finalPopulation.size() != targetPopulationSize) {
 			throw new IllegalStateException("Population not the correct size.");
 		}
+
 		return finalPopulation;
 	}
+
 
 	// Return the fittest individual in the population.
 	private MyDNA getBestIndividual (ArrayList<MyDNA> population)

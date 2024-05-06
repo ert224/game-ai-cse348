@@ -55,7 +55,30 @@ public class MyLevel extends Level{
 		// Use the provided generator, `random`, i.e.
 		// int randnum = random.nextInt(3);
 		
-		
+        String chrome = dna.getChromosome();
+
+        // Add ground blocks
+        for (int i = STARTOFFSET; i < width - EXITOFFSET; i++) {
+            setBlock(i, DEFAULTHEIGHT - 2, HILL_TOP);
+            setBlock(i, DEFAULTHEIGHT - 1, GROUND);
+        }
+
+        // Process chromosome
+        for (int i = 0; i < chrome.length(); i++) {
+            char gene = chrome.charAt(i);
+            int xPosition = STARTOFFSET + i;
+            int yPosition = DEFAULTHEIGHT - 3;
+
+            if (gene == 'a') {
+                setBlock(xPosition, yPosition, COIN);
+            } else if (gene == 'b') {
+                setBlock(xPosition, yPosition, ROCK);
+            } else if (gene == 'c') {
+                SpriteTemplate spr = new SpriteTemplate(2, false);
+                setSpriteTemplate(xPosition, yPosition, spr);
+            }
+        }
+
 		//// YOUR CODE GOES ABOVE HERE ////
 
 		// Final exit is on flat ground in the last 3 blocks.

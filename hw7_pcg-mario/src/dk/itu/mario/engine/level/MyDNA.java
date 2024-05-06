@@ -19,6 +19,10 @@ public class MyDNA extends DNA
 	{
 		MyDNA copy = new MyDNA();
 		//YOUR CODE GOES BELOW HERE
+		String origChrome = this.getChromosome();
+    	int index = (int) (Math.random() * origChrome.length());
+    	char randChar = (char) ('a' + Math.random() * 26);
+    	copy.setChromosome(origChrome.substring(0, index) + randChar + origChrome.substring(index + 1));
 
 		//YOUR CODE GOES ABOVE HERE
 		return copy;
@@ -29,7 +33,21 @@ public class MyDNA extends DNA
 	{
 		ArrayList<MyDNA> offspring = new ArrayList<MyDNA>();
 		//YOUR CODE GOES BELOW HERE
+		String currChrome = this.getChromosome();
+		String currMate = mate.getChromosome();
 
+		Random rand = new Random();
+		int breakInt = rand.nextInt(currChrome.length());
+
+		String dna1Chromosome = currChrome.substring(0, breakInt) + currMate.substring(breakInt);
+		MyDNA dna1 = new MyDNA();
+		dna1.setChromosome(dna1Chromosome);
+		offspring.add(dna1);
+
+		String dna2Chromosome = currMate.substring(0, breakInt) + currChrome.substring(breakInt);
+		MyDNA dna2 = new MyDNA();
+		dna2.setChromosome(dna2Chromosome);
+		offspring.add(dna2);
 		//YOUR CODE GOES ABOVE HERE
 		return offspring;
 	}
